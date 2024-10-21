@@ -1,35 +1,58 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import Dashboard from './pages/Dashboard';
+import Inventario from './pages/Inventario';
+import Usuarios from './pages/Usuarios';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import Button from '@mui/material/Button';
+
+// Definir el tema personalizado
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1a237e', // Azul oscuro
+    },
+    secondary: {
+      main: '#ff6f00', // Naranja vibrante
+    },
+    background: {
+      default: '#f4f6f8', // Fondo claro
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h1: {
+      fontSize: '2rem',
+      fontWeight: 600,
+    },
+    h2: {
+      fontSize: '1.75rem',
+      fontWeight: 500,
+    },
+    body1: {
+      fontSize: '1rem',
+    },
+  },
+});
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
         <Navbar />
-        <img src={logo} className="App-logo" alt="logo" />
-        <div>
-      <h1>¡Hola, Bonva!</h1>
-      <Button variant="contained" color="primary">
-        ¡Haz clic aquí!
-      </Button>
-    </div>
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      <Footer />
-      </header>
-    </div>
+        <div style={{ minHeight: 'calc(100vh - 64px)' }}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/inventario" element={<Inventario />} />
+            <Route path="/usuarios" element={<Usuarios />} />
+          </Routes>
+        </div>
+        <Footer />
+      </Router>
+    </ThemeProvider>
   );
 }
 
