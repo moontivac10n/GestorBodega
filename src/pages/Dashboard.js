@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, Typography, Grid2 } from '@mui/material';
+import { Card, CardContent, Typography, Grid, Alert } from '@mui/material';
 import { People, Inventory, ShoppingCart } from '@mui/icons-material';
 import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 
@@ -8,12 +8,12 @@ const Dashboard = () => {
   const [usuariosCount, setUsuariosCount] = useState(0);
   const [productosCount, setProductosCount] = useState(0);
   const [transaccionesCount, setTransaccionesCount] = useState(0);
+  const stockThreshold = 30; // Define el umbral de stock bajo
 
   useEffect(() => {
     // Simulación de obtención de datos del backend
     const fetchData = async () => {
       try {
-        // Aquí puedes hacer tus peticiones a la API
         // Simulación de datos
         setUsuariosCount(100); // Reemplaza con la respuesta real
         setProductosCount(500); // Reemplaza con la respuesta real
@@ -22,9 +22,9 @@ const Dashboard = () => {
         // Datos de stock (ejemplo)
         const data = [
           { name: 'Producto 1', value: 400 },
-          { name: 'Producto 2', value: 300 },
+          { name: 'Producto 2', value: 50 },
           { name: 'Producto 3', value: 300 },
-          { name: 'Producto 4', value: 200 },
+          { name: 'Producto 4', value: 20 }, // Este producto tiene bajo stock
         ];
         setStockData(data);
       } catch (error) {
@@ -42,8 +42,9 @@ const Dashboard = () => {
       <Typography variant="h2" gutterBottom color="primary">
         Panel de Control
       </Typography>
-      <Grid2 container spacing={3}>
-        <Grid2 item xs={12} md={4}>
+      <Grid container spacing={3}>
+        {/* Tarjeta de Usuarios */}
+        <Grid item xs={12} md={4}>
           <Card style={{ backgroundColor: '#e3f2fd' }}>
             <CardContent>
               <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -57,8 +58,9 @@ const Dashboard = () => {
               </Typography>
             </CardContent>
           </Card>
-        </Grid2>
-        <Grid2 item xs={12} md={4}>
+        </Grid>
+        {/* Tarjeta de Inventario */}
+        <Grid item xs={12} md={4}>
           <Card style={{ backgroundColor: '#e1f5fe' }}>
             <CardContent>
               <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -72,8 +74,9 @@ const Dashboard = () => {
               </Typography>
             </CardContent>
           </Card>
-        </Grid2>
-        <Grid2 item xs={12} md={4}>
+        </Grid>
+        {/* Tarjeta de Transacciones */}
+        <Grid item xs={12} md={4}>
           <Card style={{ backgroundColor: '#fff3e0' }}>
             <CardContent>
               <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -87,14 +90,26 @@ const Dashboard = () => {
               </Typography>
             </CardContent>
           </Card>
-        </Grid2>
-      </Grid2>
+        </Grid>
+      </Grid>
 
+      {/* Alertas de poco stock */}
+      <div style={{ marginTop: '20px' }}>
+        {stockData
+          .filter(item => item.value < stockThreshold)
+          .map((item, index) => (
+            <Alert key={index} severity="warning" style={{ marginBottom: '10px', color: 'red' }}>
+              Alerta: {item.name} tiene poco stock ({item.value} unidades)
+            </Alert>
+          ))}
+      </div>
+
+
+      <Typography variant="h4" marginTop={5} textAlign={'center'} gutterBottom>
+        Distribución de Stock
+      </Typography>
       {/* Gráfico de Distribución de Stock */}
-      <div style={{ marginTop: '40px' }}>
-        <Typography variant="h4" gutterBottom>
-          Distribución de Stock
-        </Typography>
+      <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'center' }}>
         <PieChart width={400} height={400}>
           <Pie
             data={stockData}
@@ -106,7 +121,7 @@ const Dashboard = () => {
             fill="#8884d8"
             dataKey="value"
           >
-            {stockData.map((_entry, index) => (
+            {stockData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>

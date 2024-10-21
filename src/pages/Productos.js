@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { TextField, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { TextField, Button, Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 
-
-const Inventario = () => {
+const Productos = () => {
     const [productos, setProductos] = useState([
         { id: 1, name: 'Laptop', price: 1200, quantity: 10 },
         { id: 2, name: 'Mouse', price: 25, quantity: 100 },
@@ -10,6 +9,7 @@ const Inventario = () => {
         { id: 4, name: 'Monitor', price: 300, quantity: 15 }
     ]);
 
+    const [newProducto, setNewProducto] = useState({ name: '', price: '', quantity: '' });
     const [searchTerm, setSearchTerm] = useState(''); // Estado para la búsqueda
 
     // Filtrar productos basado en el término de búsqueda
@@ -17,28 +17,20 @@ const Inventario = () => {
         producto.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleAgregar = () => {
+        const id = productos.length + 1;
+        setProductos([...productos, { id, ...newProducto }]);
+        setNewProducto({ name: '', price: '', quantity: '' });
+    };
+
     const handleDelete = (id) => {
         console.log(`Producto con id ${id} eliminado`);
     };
 
-
-
-
-
-    useEffect(() => {
-        //obtener productos del backend
-        const obtenerProductos = async () => {
-            const response = await fetch('/api/productos');
-            const data = await response.json();
-            setProductos(data);
-        };
-        obtenerProductos();
-    }, []);
-
     return (
         <Box sx={{ padding: 3 }}>
             <Typography variant="h4" gutterBottom>
-                Gestión de Inventario
+                Gestión de Productos
             </Typography>
 
             {/* Campo de búsqueda */}
@@ -49,12 +41,43 @@ const Inventario = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <TableContainer component={Paper}>
+
+            <form onSubmit={e => e.preventDefault()}>
+                <TextField
+                    label="Nombre del Producto"
+                    fullWidth
+                    margin="normal"
+                    value={newProducto.name}
+                    onChange={(e) => setNewProducto({ ...newProducto, name: e.target.value })}
+                />
+                <TextField
+                    label="Precio"
+                    fullWidth
+                    margin="normal"
+                    type="number"
+                    value={newProducto.price}
+                    onChange={(e) => setNewProducto({ ...newProducto, price: e.target.value })}
+                />
+                <TextField
+                    label="Cantidad"
+                    fullWidth
+                    margin="normal"
+                    type="number"
+                    value={newProducto.quantity}
+                    onChange={(e) => setNewProducto({ ...newProducto, quantity: e.target.value })}
+                />
+                <Button variant="contained" color="primary" fullWidth onClick={handleAgregar}>
+                    Agregar Producto
+                </Button>
+            </form>
+
+            {/* Tabla de productos filtrados */}
+            <TableContainer component={Paper} sx={{ marginTop: 3 }}>
                 <Table>
                     <TableHead>
                         <TableRow>
                             <TableCell>ID</TableCell>
-                            <TableCell>Producto</TableCell>
+                            <TableCell>Nombre</TableCell>
                             <TableCell>Precio</TableCell>
                             <TableCell>Cantidad</TableCell>
                             <TableCell>Acciones</TableCell>
@@ -92,5 +115,4 @@ const Inventario = () => {
     );
 };
 
-export default Inventario;
-
+export default Productos;

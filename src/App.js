@@ -7,18 +7,21 @@ import Inventario from './pages/Inventario';
 import Usuarios from './pages/Usuarios';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import Categorias from './pages/Categorias';
+import Login from './pages/Login';
+import Productos from './pages/Productos';
+import Register from './pages/Register';
 
-// Definir el tema personalizado
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1a237e', // Azul oscuro
+      main: '#1a237e', //Azul oscuro
     },
     secondary: {
-      main: '#ff6f00', // Naranja vibrante
+      main: '#ff6f00', //Naranja vibrante
     },
     background: {
-      default: '#f4f6f8', // Fondo claro
+      default: '#f4f6f8', //Fondo claro
     },
   },
   typography: {
@@ -48,6 +51,10 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/inventario" element={<Inventario />} />
             <Route path="/usuarios" element={<Usuarios />} />
+            <Route path="/categorias" element={<Categorias />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/productos" element={<Productos />} />
+            <Route path="/register" element={<Register />} />
           </Routes>
         </div>
         <Footer />
