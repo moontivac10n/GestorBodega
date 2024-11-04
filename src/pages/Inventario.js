@@ -21,10 +21,6 @@ const Inventario = () => {
         console.log(`Producto con id ${id} eliminado`);
     };
 
-
-
-
-
     useEffect(() => {
         //obtener productos del backend
         const obtenerProductos = async () => {

@@ -11,6 +11,9 @@ import Categorias from './pages/Categorias';
 import Login from './pages/Login';
 import Productos from './pages/Productos';
 import Register from './pages/Register';
+import Proveedores from './pages/Proveedores';
+import Reportes from './pages/Reportes';
+import Ventas from './pages/Ventas';
 
 const theme = createTheme({
   palette: {
@@ -55,6 +58,9 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/productos" element={<Productos />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/proveedores" element={<Proveedores />} />
+            <Route path="/reportes" element={<Reportes />} />
+            <Route path="/ventas" element={<Ventas />} />
           </Routes>
         </div>
         <Footer />
