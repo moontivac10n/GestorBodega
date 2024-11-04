@@ -1,4 +1,3 @@
-// src/pages/Proveedores.js
 import React, { useState, useEffect } from 'react';
 import {
     Table,
@@ -21,7 +20,9 @@ const Proveedores = () => {
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [deletedProveedor, setDeletedProveedor] = useState('');
     const [openModal, setOpenModal] = useState(false);
+    const [openEditModal, setOpenEditModal] = useState(false);
     const [newProveedor, setNewProveedor] = useState({ nombre: '', contacto: '' });
+    const [selectedProveedor, setSelectedProveedor] = useState(null);
 
     useEffect(() => {
         // Simulación de datos de proveedores
@@ -51,9 +52,31 @@ const Proveedores = () => {
         setOpenModal(false);
     };
 
+    const handleOpenEditModal = (proveedor) => {
+        setSelectedProveedor(proveedor);
+        setOpenEditModal(true);
+    };
+
+    const handleCloseEditModal = () => {
+        setOpenEditModal(false);
+        setSelectedProveedor(null); // Reiniciar selección
+    };
+
+    const handleEditProveedor = () => {
+        const updatedProveedores = proveedores.map(proveedor =>
+            proveedor.id === selectedProveedor.id ? selectedProveedor : proveedor
+        );
+        setProveedores(updatedProveedores);
+        handleCloseEditModal();
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setNewProveedor({ ...newProveedor, [name]: value });
+        if (selectedProveedor) {
+            setSelectedProveedor({ ...selectedProveedor, [name]: value });
+        } else {
+            setNewProveedor({ ...newProveedor, [name]: value });
+        }
     };
 
     const handleAddProveedor = () => {
@@ -93,7 +116,12 @@ const Proveedores = () => {
                                     <TableCell>{proveedor.nombre}</TableCell>
                                     <TableCell>{proveedor.contacto}</TableCell>
                                     <TableCell>
-                                        <Button variant="contained" color="primary" style={{ marginRight: '10px' }}>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            style={{ marginRight: '10px' }}
+                                            onClick={() => handleOpenEditModal(proveedor)} //Logica para desplegar modal
+                                        >
                                             Editar
                                         </Button>
                                         <Button variant="contained" color="secondary" onClick={() => handleDelete(proveedor.id)}>
@@ -149,6 +177,49 @@ const Proveedores = () => {
                     </Button>
                 </Box>
             </Modal>
+
+            {/* Modal para editar proveedor */}
+            <Modal open={openEditModal} onClose={handleCloseEditModal}>
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 400,
+                        bgcolor: 'background.paper',
+                        boxShadow: 24,
+                        p: 4,
+                    }}
+                >
+                    <Typography variant="h6" gutterBottom>
+                        Editar Proveedor
+                    </Typography>
+                    {selectedProveedor && (
+                        <>
+                            <TextField
+                                label="Nombre"
+                                name="nombre"
+                                value={selectedProveedor.nombre}
+                                onChange={handleInputChange}
+                                fullWidth
+                                margin="normal"
+                            />
+                            <TextField
+                                label="Contacto"
+                                name="contacto"
+                                value={selectedProveedor.contacto}
+                                onChange={handleInputChange}
+                                fullWidth
+                                margin="normal"
+                            />
+                            <Button variant="contained" color="primary" onClick={handleEditProveedor}>
+                                Guardar Cambios
+                            </Button>
+                        </>
+                    )}
+                </Box>
+            </Modal>    
         </div>
     );
 };
