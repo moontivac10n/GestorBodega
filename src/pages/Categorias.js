@@ -1,26 +1,78 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 import { TextField, Button, Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 
 const Categorias = () => {
-    const [categorias, setCategorias] = useState([{ id: 1, name: 'Electrónica' }]);
-    const [newCategoria, setNewCategoria] = useState('');
-    const [searchTerm, setSearchTerm] = useState(''); // Estado para la búsqueda
+    const { auth } = useAuth();
+    const [categories, setCategories] = useState([]);
+    const [newCategory, setNewCategory] = useState({ name: '', description: '' });
+    const [editingCategory, setEditingCategory] = useState(null);
 
-    const handleAgregar = () => {
-        const id = categorias.length + 1;
-        setCategorias([...categorias, { id, name: newCategoria }]);
-        setNewCategoria('');
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await axios.get('http://localhost:4000/category/', {
+                    headers: { Authorization: `Bearer ${auth.token}` },
+                });
+                setCategories(response.data);
+            } catch (error) {
+                console.error("Error al obtener categorías:", error);
+            }
+        };
+        fetchCategories();
+    }, [auth.token]);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        if (editingCategory) {
+            setEditingCategory({ ...editingCategory, [name]: value });
+        } else {
+            setNewCategory({ ...newCategory, [name]: value });
+        }
     };
 
+    const handleCreateCategory = async () => {
+        try {
+            const response = await axios.post('http://localhost:4000/category/', newCategory, {
+                headers: { Authorization: `Bearer ${auth.token}` },
+            });
+            setCategories([...categories, response.data]);
+            setNewCategory({ name: '', description: '' });
+        } catch (error) {
+            console.error("Error al crear categoría:", error);
+        }
+    };
 
     // Filtrar categorias basado en el término de búsqueda
-    const categoriasFiltrados = categorias.filter((categoria) =>
-        categoria.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    //const categoriasFiltrados = categorias.filter((categoria) =>
+    //    categoria.name.toLowerCase().includes(searchTerm.toLowerCase())
+    //);
 
-    const handleDelete = (id) => {
-        console.log(`Categoria con id ${id} eliminado`);
+    const handleUpdateCategory = async () => {
+        try {
+            const response = await axios.put(`http://localhost:4000/category/${editingCategory.id}`, editingCategory, {
+                headers: { Authorization: `Bearer ${auth.token}` },
+            });
+            setCategories(categories.map(cat => (cat.id === editingCategory.id ? response.data : cat)));
+            setEditingCategory(null);
+        } catch (error) {
+            console.error("Error al actualizar categoría:", error);
+        }
     };
+
+    /*
+    const handleDeleteCategory = async (id) => {
+        try {
+            await axios.delete(`http://localhost:4000/category/${id}`, {
+                headers: { Authorization: `Bearer ${auth.token}` },
+            });
+            setCategories(categories.filter(cat => cat.id !== id));
+        } catch (error) {
+            console.error("Error al eliminar categoría:", error);
+        }
+    };
+    */
 
     return (
         <Box sx={{ padding: 3 }}>
@@ -29,22 +81,34 @@ const Categorias = () => {
             </Typography>
 
             {/* Campo de búsqueda */}
-            <TextField
+            {/* <TextField
                 label="Buscar categoria"
                 fullWidth
                 margin="normal"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            />*/}
 
             <TextField
-                label="Nombre de la Categoría"
+                placeholder="Nombre de la Categoría"
                 fullWidth
                 margin="normal"
-                value={newCategoria}
-                onChange={(e) => setNewCategoria(e.target.value)}
+                type='text'
+                name='name'
+                value={editingCategory ? editingCategory.name : newCategory.name}
+                onChange={handleInputChange}
             />
-            <Button variant="contained" color="primary" fullWidth onClick={handleAgregar}>
+            <TextField
+                placeholder="Descripcion de la Categoría"
+                fullWidth
+                margin="normal"
+                type='text'
+                name='description'
+                value={editingCategory ? editingCategory.description : newCategory.description}
+                onChange={handleInputChange}
+            />
+            
+            <Button variant="contained" color="primary" fullWidth onClick={handleCreateCategory}>
                 Agregar Categoría
             </Button>
 
@@ -54,20 +118,22 @@ const Categorias = () => {
                         <TableRow>
                             <TableCell>ID</TableCell>
                             <TableCell>Categoría</TableCell>
+                            <TableCell>Descripcion</TableCell>
                             <TableCell>Acciones</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {categoriasFiltrados.length > 0 ? (
-                            categoriasFiltrados.map((categoria) => (
-                                <TableRow key={categoria.id}>
-                                    <TableCell>{categoria.id}</TableCell>
-                                    <TableCell>{categoria.name}</TableCell>
+                        {categories.length > 0 ? (
+                            categories.map((category) => (
+                                <TableRow key={category.id}>
+                                    <TableCell>{category.id}</TableCell>
+                                    <TableCell>{category.name}</TableCell>
+                                    <TableCell>{category.description}</TableCell>
                                     <TableCell>
                                         <Button variant="contained" color="primary" sx={{ marginRight: 1 }}>
                                             Editar
                                         </Button>
-                                        <Button variant="contained" color="secondary" onClick={() => handleDelete(categoria.id)}>
+                                        <Button variant="contained" color="secondary">
                                             Eliminar
                                         </Button>
                                     </TableCell>
