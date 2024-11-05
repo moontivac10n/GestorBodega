@@ -14,6 +14,7 @@ const Categorias = () => {
     const [openModal, setOpenModal] = useState(false);
     const [openEditModal, setOpenEditModal] = useState(false);
     const [deletedCategory, setDeletedCategory] = useState('');
+    const [editedCategory, setEditedCategory] = useState('');
     const [openSnackbar, setOpenSnackbar] = useState(false);
 
     useEffect(() => {
@@ -72,6 +73,7 @@ const Categorias = () => {
                 headers: { Authorization: `Bearer ${auth.token}` },
             });
             setCategories(categories.map(cat => (cat.id === selectedCategory.id ? response.data : cat)));
+            setEditedCategory(response.data.name);
             setSelectedCategory(null);
             handleCloseEditModal();
         } catch (error) {
@@ -161,6 +163,13 @@ const Categorias = () => {
                 autoHideDuration={6000}
                 onClose={handleCloseSnackbar}
                 message={`Categoría ${deletedCategory} eliminada`}
+            />
+
+            <Snackbar
+                open={!!editedCategory} // Show snackbar if a category was edited
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                message={`Categoría ${editedCategory} actualizada`}
             />
 
             {/* Modal to create a new category */}
