@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Dashboard from './pages/Dashboard';
@@ -43,15 +44,29 @@ const theme = createTheme({
   },
 });
 
-function App() {
+const AppContent = () => {
+  const { auth, loading } = useAuth();
+  console.log(auth)
+  if (loading) return <p>Cargando...</p>;
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
         <Navbar />
         <div style={{ minHeight: 'calc(100vh - 64px)' }}>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Navigate to="/login" />} />
+
+            {/* Rutas protegidas */}
+            <Route
+              path="/dashboard"
+              element={
+                auth.token 
+                  ? (auth.isCompany ? <Dashboard /> : <Dashboard />) 
+                  : <Navigate to="/login" />
+              }
+            />
+
             <Route path="/inventario" element={<Inventario />} />
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/categorias" element={<Categorias />} />
@@ -64,8 +79,17 @@ function App() {
           </Routes>
         </div>
         <Footer />
-      </Router>
     </ThemeProvider>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
 
