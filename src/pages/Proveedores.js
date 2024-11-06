@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 import {
     Table,
     TableBody,
@@ -16,29 +18,45 @@ import {
 } from '@mui/material';
 
 const Proveedores = () => {
-    const [proveedores, setProveedores] = useState([]);
+    const { auth } = useAuth();
+    const [suppliers, setSuppliers] = useState([]);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [openSnackbar, setOpenSnackbar] = useState(false);
-    const [deletedProveedor, setDeletedProveedor] = useState('');
+    const [deletedSupplier, setDeletedSupplier] = useState('');
     const [openModal, setOpenModal] = useState(false);
     const [openEditModal, setOpenEditModal] = useState(false);
-    const [newProveedor, setNewProveedor] = useState({ nombre: '', contacto: '' });
-    const [selectedProveedor, setSelectedProveedor] = useState(null);
+    const [newSupplier, setNewSupplier] = useState({ name: '', contactName: '', email: '', phone: '', address: '' });
+    const [editingSupplier, setEditingSupplier] = useState(null);
 
     useEffect(() => {
-        // Simulación de datos de proveedores
-        const proveedoresSimulados = [
-            { id: 1, nombre: 'Proveedor A', contacto: 'contactoA@mail.com' },
-            { id: 2, nombre: 'Proveedor B', contacto: 'contactoB@mail.com' },
-        ];
-        setProveedores(proveedoresSimulados);
-    }, []);
+        const fetchSuppliers = async () => {
+            try {
+                const response = await axios.get('http://localhost:4000/supplier/', {
+                    headers: {
+                        Authorization: `Bearer ${auth.token}`,
+                    },
+                });
+                setSuppliers(response.data);
+            } catch (err) {
+                console.error("Error al obtener proveedores:", err);
+                setError('Error al obtener proveedores');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchSuppliers();
+    }, [auth.token]);
 
+    /* luego lo implementare, al ser foranea de otra tabla tengo que ver si hago un DELETE SET
+    o implementarle un estado no disponible y que no se muestre en la lista de proovedores
     const handleDelete = (id) => {
         const proveedorEliminado = proveedores.find(proveedor => proveedor.id === id);
         setProveedores(proveedores.filter(proveedor => proveedor.id !== id));
         setDeletedProveedor(proveedorEliminado.nombre);
         setOpenSnackbar(true);
     };
+    */
 
     const handleCloseSnackbar = () => {
         setOpenSnackbar(false);
@@ -52,39 +70,60 @@ const Proveedores = () => {
         setOpenModal(false);
     };
 
-    const handleOpenEditModal = (proveedor) => {
-        setSelectedProveedor(proveedor);
+    const handleOpenEditModal = (supplier) => {
+        setEditingSupplier(supplier);
         setOpenEditModal(true);
     };
 
     const handleCloseEditModal = () => {
         setOpenEditModal(false);
-        setSelectedProveedor(null); // Reiniciar selección
+        setEditingSupplier(null); // Reiniciar selección
     };
 
-    const handleEditProveedor = () => {
-        const updatedProveedores = proveedores.map(proveedor =>
-            proveedor.id === selectedProveedor.id ? selectedProveedor : proveedor
-        );
-        setProveedores(updatedProveedores);
-        handleCloseEditModal();
+    const handleUpdateSupplier = async () => {
+        try {
+            const response = await axios.put(`http://localhost:4000/supplier/${editingSupplier.id}`, editingSupplier, {
+                headers: {
+                    Authorization: `Bearer ${auth.token}`,
+                },
+            });
+            setSuppliers(suppliers.map(s => (s.id === editingSupplier.id ? response.data : s)));
+            setEditingSupplier(null);
+            handleCloseEditModal();
+        } catch (err) {
+            console.error("Error al actualizar proveedor:", err);
+            setError('Error al actualizar proveedor');
+        }
     };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        if (selectedProveedor) {
-            setSelectedProveedor({ ...selectedProveedor, [name]: value });
+        if (editingSupplier) {
+            setEditingSupplier({ ...editingSupplier, [name]: value });
         } else {
-            setNewProveedor({ ...newProveedor, [name]: value });
+            setNewSupplier({ ...newSupplier, [name]: value });
         }
     };
 
-    const handleAddProveedor = () => {
-        const id = proveedores.length ? proveedores[proveedores.length - 1].id + 1 : 1; // Generar un nuevo ID
-        setProveedores([...proveedores, { id, ...newProveedor }]);
-        setNewProveedor({ nombre: '', contacto: '' }); // Reiniciar el formulario
-        handleCloseModal();
+    const handleCreateSupplier = async () => {
+        try {
+            const response = await axios.post('http://localhost:4000/supplier/', newSupplier, {
+                headers: {
+                    Authorization: `Bearer ${auth.token}`,
+                },
+            });
+            setSuppliers([...suppliers, response.data]);
+            setNewSupplier({ name: '', contactName: '', email: '', phone: '', address: '' });
+            handleCloseModal();
+        } catch (err) {
+            console.error("Error al crear proveedor:", err);
+            setError('Error al crear proveedor');
+        }
     };
+
+    if (loading) {
+        return <p>Cargando Proveedores...</p>;
+    }
 
     return (
         <div style={{ padding: '20px' }}>
@@ -100,31 +139,37 @@ const Proveedores = () => {
                         <TableRow>
                             <TableCell>Nombre</TableCell>
                             <TableCell>Contacto</TableCell>
+                            <TableCell>Email</TableCell>
+                            <TableCell>Telefono</TableCell>
+                            <TableCell>Dirección</TableCell>
                             <TableCell>Acciones</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {proveedores.length === 0 ? (
+                        {suppliers.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={3} align="center">
-                                    <Typography variant="body1">No hay proveedores disponibles</Typography>
+                                    <Typography variant="body1">No hay Proveedores disponibles</Typography>
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            proveedores.map((proveedor) => (
-                                <TableRow key={proveedor.id}>
-                                    <TableCell>{proveedor.nombre}</TableCell>
-                                    <TableCell>{proveedor.contacto}</TableCell>
+                            suppliers.map((supplier) => (
+                                <TableRow key={supplier.id}>
+                                    <TableCell>{supplier.name}</TableCell>
+                                    <TableCell>{supplier.contactName}</TableCell>
+                                    <TableCell>{supplier.email}</TableCell>
+                                    <TableCell>{supplier.phone}</TableCell>
+                                    <TableCell>{supplier.address}</TableCell>
                                     <TableCell>
                                         <Button
                                             variant="contained"
                                             color="primary"
                                             style={{ marginRight: '10px' }}
-                                            onClick={() => handleOpenEditModal(proveedor)} //Logica para desplegar modal
+                                            onClick={() => handleOpenEditModal(supplier)} //Logica para desplegar modal
                                         >
                                             Editar
                                         </Button>
-                                        <Button variant="contained" color="secondary" onClick={() => handleDelete(proveedor.id)}>
+                                        <Button variant="contained" color="secondary">
                                             Eliminar
                                         </Button>
                                     </TableCell>
@@ -138,7 +183,7 @@ const Proveedores = () => {
                 open={openSnackbar}
                 autoHideDuration={6000}
                 onClose={handleCloseSnackbar}
-                message={`Proveedor ${deletedProveedor} eliminado`}
+                message={`Proveedor ${deletedSupplier} eliminado`}
             />
             <Modal open={openModal} onClose={handleCloseModal}>
                 <Box
@@ -157,22 +202,46 @@ const Proveedores = () => {
                         Agregar Proveedor
                     </Typography>
                     <TextField
-                        label="Nombre"
-                        name="nombre"
-                        value={newProveedor.nombre}
+                        placeholder="Nombre"
+                        name="name"
+                        value={newSupplier.name}
                         onChange={handleInputChange}
                         fullWidth
                         margin="normal"
                     />
                     <TextField
-                        label="Contacto"
-                        name="contacto"
-                        value={newProveedor.contacto}
+                        placeholder="Contacto"
+                        name="contactName"
+                        value={newSupplier.contactName}
                         onChange={handleInputChange}
                         fullWidth
                         margin="normal"
                     />
-                    <Button variant="contained" color="primary" onClick={handleAddProveedor}>
+                    <TextField
+                        placeholder="Correo Electronico"
+                        name="email"
+                        value={newSupplier.email}
+                        onChange={handleInputChange}
+                        fullWidth
+                        margin="normal"
+                    />
+                    <TextField
+                        placeholder="Telefono"
+                        name="phone"
+                        value={newSupplier.phone}
+                        onChange={handleInputChange}
+                        fullWidth
+                        margin="normal"
+                    />
+                    <TextField
+                        placeholder="Direccion"
+                        name="address"
+                        value={newSupplier.address}
+                        onChange={handleInputChange}
+                        fullWidth
+                        margin="normal"
+                    />
+                    <Button variant="contained" color="primary" onClick={handleCreateSupplier}>
                         Agregar
                     </Button>
                 </Box>
@@ -195,25 +264,49 @@ const Proveedores = () => {
                     <Typography variant="h6" gutterBottom>
                         Editar Proveedor
                     </Typography>
-                    {selectedProveedor && (
+                    {editingSupplier && (
                         <>
                             <TextField
-                                label="Nombre"
-                                name="nombre"
-                                value={selectedProveedor.nombre}
+                                placeholder="Nombre"
+                                name="name"
+                                value={editingSupplier.name}
                                 onChange={handleInputChange}
                                 fullWidth
                                 margin="normal"
                             />
                             <TextField
-                                label="Contacto"
-                                name="contacto"
-                                value={selectedProveedor.contacto}
+                                placeholder="Contacto"
+                                name="contactName"
+                                value={editingSupplier.contactName}
                                 onChange={handleInputChange}
                                 fullWidth
                                 margin="normal"
                             />
-                            <Button variant="contained" color="primary" onClick={handleEditProveedor}>
+                            <TextField
+                                placeholder="Correo Electronico"
+                                name="email"
+                                value={editingSupplier.email}
+                                onChange={handleInputChange}
+                                fullWidth
+                                margin="normal"
+                            />
+                            <TextField
+                                placeholder="Telefono"
+                                name="phone"
+                                value={editingSupplier.phone}
+                                onChange={handleInputChange}
+                                fullWidth
+                                margin="normal"
+                            />
+                            <TextField
+                                placeholder="Direccion"
+                                name="address"
+                                value={editingSupplier.address}
+                                onChange={handleInputChange}
+                                fullWidth
+                                margin="normal"
+                            />
+                            <Button variant="contained" color="primary" onClick={handleUpdateSupplier}>
                                 Guardar Cambios
                             </Button>
                         </>
