@@ -1,251 +1,296 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Snackbar, Modal } from '@mui/material';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import useFetchUserDetails from '../hooks/useFetchUserDetails';
+import {
+    TextField, Button, Typography, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
+    Snackbar, Modal, MenuItem, Select, InputLabel, FormControl
+} from '@mui/material';
 
 const Productos = () => {
-    const [productos, setProductos] = useState([]);
+    const { auth } = useAuth();
+    const [products, setProducts] = useState([]);
     const [openSnackbar, setOpenSnackbar] = useState(false);
-    const [deletedProducto, setDeletedProducto] = useState('');
+    const [deletedProduct, setDeletedProduct] = useState('');
     const [openModal, setOpenModal] = useState(false);
     const [openEditModal, setOpenEditModal] = useState(false);
-    const [selectedProducto, setSelectedProducto] = useState(null);
-    const [newProducto, setNewProducto] = useState({ nombre: '', precio: '', cantidad: '' });
-    const [searchTerm, setSearchTerm] = useState(''); // Estado para la búsqueda
+    const [newProduct, setNewProduct] = useState({
+        id: '',
+        name: '',
+        description: '',
+        sku: '',
+        price: '',
+        categoryId: '',
+        supplierId: '',
+        statusId: '',
+        image_url: '',
+    });
+    const [categories, setCategories] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
+    const [statuses, setStatuses] = useState([]);
+    const [error, setError] = useState(null);
 
-    // Filtrar productos basado en el término de búsqueda
-    const productosFiltrados = productos.filter((producto) =>
-        producto.nombre && producto.nombre.toLowerCase().includes(searchTerm.toLowerCase()) // Verifica si `producto.nombre` está definido
-    );
+    const { userDetails, loading, error: userError } = useFetchUserDetails(auth.user.id, auth.token);
 
     useEffect(() => {
-        // Simulación de datos de productos
-        const productosSimulados = [
-            { id: 1, nombre: 'Producto A', precio: 1200, cantidad: 300 },
-            { id: 2, nombre: 'Producto B', precio: 45, cantidad: 180 },
-        ];
-        setProductos(productosSimulados);
-    }, []);
+        const fetchOptions = async () => {
+        try {
+            const [categoriesRes, suppliersRes, statusesRes] = await Promise.all([
+            axios.get('http://localhost:4000/category', { headers: { Authorization: `Bearer ${auth.token}` } }),
+            axios.get('http://localhost:4000/supplier', { headers: { Authorization: `Bearer ${auth.token}` } }),
+            axios.get('http://localhost:4000/status', { headers: { Authorization: `Bearer ${auth.token}` } }),
+            ]);
+            setCategories(categoriesRes.data);
+            setSuppliers(suppliersRes.data);
+            setStatuses(statusesRes.data);
+        } catch (err) {
+            console.error("Error al obtener opciones:", err);
+            setError('Error al cargar las opciones');
+        }
+        };
+        fetchOptions();
+    }, [auth.token]);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+        try {
+            const res = await axios.get('http://localhost:4000/product', {
+            headers: { Authorization: `Bearer ${auth.token}` },
+            });
+            setProducts(res.data);
+        } catch (err) {
+            console.error("Error al obtener productos:", err);
+            setError('Error al cargar los productos');
+        }
+        };
+        fetchProducts();
+    }, [auth.token]);
 
     const handleOpenModal = () => {
+        setNewProduct({
+        id: '',
+        name: '',
+        description: '',
+        sku: '',
+        price: '',
+        categoryId: '',
+        supplierId: '',
+        statusId: '',
+        image_url: '',
+        });
         setOpenModal(true);
-    };
-
-    const handleDelete = (id) => {
-        const productoEliminado = productos.find(producto => producto.id === id);
-        setProductos(productos.filter(producto => producto.id !== id));
-        setDeletedProducto(productoEliminado.nombre);
-        setOpenSnackbar(true);
-    };
-
-    const handleCloseSnackbar = () => {
-        setOpenSnackbar(false);
     };
 
     const handleCloseModal = () => {
         setOpenModal(false);
     };
 
-    const handleOpenEditModal = (producto) => {
-        setSelectedProducto(producto);
+    const handleOpenEditModal = (product) => {
+        setNewProduct({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        sku: product.sku,
+        price: product.price.toString(),
+        categoryId: product.categoryId.toString(),
+        supplierId: product.supplierId.toString(),
+        statusId: product.statusId.toString(),
+        image_url: product.image_url,
+        });
         setOpenEditModal(true);
     };
 
     const handleCloseEditModal = () => {
         setOpenEditModal(false);
-        setSelectedProducto(null); // Reiniciar selección
-    };
-
-    const handleEditProducto = () => {
-        const updatedProductos = productos.map(producto =>
-            producto.id === selectedProducto.id ? selectedProducto : producto
-        );
-        setProductos(updatedProductos);
-        handleCloseEditModal();
     };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        if (selectedProducto) {
-            setSelectedProducto({ ...selectedProducto, [name]: value });
+        setNewProduct((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleCreateOrUpdateProduct = async () => {
+        // Validación de campos
+        if (!newProduct.name || !newProduct.price || !newProduct.categoryId || !newProduct.supplierId || !newProduct.statusId) {
+        setError('Por favor, complete todos los campos requeridos.');
+        return;
+        }
+
+        const productData = {
+        ...newProduct,
+        price: parseFloat(newProduct.price),
+        categoryId: parseInt(newProduct.categoryId, 10),
+        supplierId: parseInt(newProduct.supplierId, 10),
+        statusId: parseInt(newProduct.statusId, 10),
+        companyId: userDetails?.companyId,
+        };
+
+    try {
+        let res;
+        if (newProduct.id) {
+            // Actualizar producto
+            res = await axios.put(`http://localhost:4000/product/${newProduct.id}`, productData, {
+            headers: { Authorization: `Bearer ${auth.token}` },
+            });
         } else {
-            setNewProducto({ ...newProducto, [name]: value });
+            // Crear nuevo producto
+            res = await axios.post('http://localhost:4000/product', productData, {
+            headers: { Authorization: `Bearer ${auth.token}` },
+            });
+        }
+
+        setNewProduct({
+            id: '',
+            name: '',
+            description: '',
+            sku: '',
+            price: '',
+            categoryId: '',
+            supplierId: '',
+            statusId: '',
+            image_url: '',
+        });
+
+        const productsRes = await axios.get('http://localhost:4000/product', {
+            headers: { Authorization: `Bearer ${auth.token}` },
+        });
+        setProducts(productsRes.data);
+        handleCloseModal();
+        handleCloseEditModal();
+        } catch (err) {
+        console.error("Error al crear o actualizar producto:", err);
+        setError('Error al procesar el producto');
         }
     };
 
-    const handleAddProducto = () => {
-        const id = productos.length ? productos[productos.length - 1].id + 1 : 1; // Generar un nuevo ID
-        setProductos([...productos, { id, ...newProducto }]);
-        setNewProducto({ nombre: '', contacto: '' }); // Reiniciar el formulario
-        handleCloseModal();
+    const handleDelete = async (id) => {
+        try {
+        const productToDelete = products.find((product) => product.id === id);
+        await axios.delete(`http://localhost:4000/product/${id}`, {
+            headers: { Authorization: `Bearer ${auth.token}` },
+        });
+        setProducts(products.filter((product) => product.id !== id));
+        setDeletedProduct(productToDelete.name);
+        setOpenSnackbar(true);
+        } catch (error) {
+        console.error("Error al eliminar producto:", error);
+        }
+    };
+
+    const handleCloseSnackbar = () => {
+        setOpenSnackbar(false);
     };
 
     return (
         <Box sx={{ padding: 3 }}>
-            <Typography variant="h4" gutterBottom>
-                Gestión de Productos
-            </Typography>
+        <Typography variant="h4" gutterBottom>Gestión de Productos</Typography>
 
-            {/* Campo de búsqueda */}
-            <TextField
-                label="Buscar producto"
-                fullWidth
-                margin="normal"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Button variant="contained" color="primary" style={{ marginBottom: '20px' }} onClick={handleOpenModal}>
-                Agregar Productos
+        <Button variant="contained" color="primary" style={{ marginBottom: '20px' }} onClick={handleOpenModal}>
+            Agregar Producto
+        </Button>
+
+        <TableContainer component={Paper} sx={{ marginTop: 3 }}>
+            <Table>
+            <TableHead>
+                <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Nombre</TableCell>
+                <TableCell>Descripción</TableCell>
+                <TableCell>SKU</TableCell>
+                <TableCell>Precio</TableCell>
+                <TableCell>Categoria</TableCell>
+                <TableCell>Proveedor</TableCell>
+                <TableCell>Acciones</TableCell>
+                </TableRow>
+            </TableHead>
+            <TableBody>
+                {products.length > 0 ? (
+                products.map((product) => (
+                    <TableRow key={product.id}>
+                    <TableCell>{product.id}</TableCell>
+                    <TableCell>{product.name}</TableCell>
+                    <TableCell>{product.description}</TableCell>
+                    <TableCell>{product.sku}</TableCell>
+                    <TableCell>${product.price}</TableCell>
+                    <TableCell>{product.category.name}</TableCell>
+                    <TableCell>{product.supplier.name}</TableCell>
+                    <TableCell>
+                        <Button variant="contained" color="primary" style={{ marginRight: '10px' }} onClick={() => handleOpenEditModal(product)}>Editar</Button>
+                        <Button variant="contained" color="secondary" onClick={() => handleDelete(product.id)}>Eliminar</Button>
+                    </TableCell>
+                    </TableRow>
+                ))
+                ) : (
+                <TableRow>
+                    <TableCell colSpan={6}><Typography>Cargando Productos...</Typography></TableCell>
+                </TableRow>
+                )}
+            </TableBody>
+            </Table>
+        </TableContainer>
+
+        <Snackbar open={openSnackbar} autoHideDuration={6000} onClose={handleCloseSnackbar} message={`Producto ${deletedProduct} eliminado`} />
+
+        {/* Modal de creación/edición */}
+        <Modal open={openModal || openEditModal} onClose={handleCloseModal}>
+            <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', boxShadow: 24, p: 4 }}>
+            <Typography variant="h6" gutterBottom>{newProduct.id ? 'Editar Producto' : 'Agregar Producto'}</Typography>
+            
+            <TextField label="Nombre" name="name" value={newProduct.name} onChange={handleInputChange} fullWidth margin="normal" />
+            <TextField label="Descripción" name="description" value={newProduct.description} onChange={handleInputChange} fullWidth margin="normal" />
+            <TextField label="SKU" name="sku" value={newProduct.sku} onChange={handleInputChange} fullWidth margin="normal" />
+            <TextField label="Precio" name="price" value={newProduct.price} onChange={handleInputChange} fullWidth margin="normal" />
+
+            {/* Select para Categoría */}
+            <FormControl fullWidth margin="normal">
+                <InputLabel>Categoria</InputLabel>
+                <Select
+                label="Categoria"
+                name="categoryId"
+                value={newProduct.categoryId}
+                onChange={handleInputChange}
+                >
+                {categories.map((category) => (
+                    <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>
+                ))}
+                </Select>
+            </FormControl>
+
+            {/* Select para Proveedor */}
+            <FormControl fullWidth margin="normal">
+                <InputLabel>Proveedor</InputLabel>
+                <Select
+                label="Proveedor"
+                name="supplierId"
+                value={newProduct.supplierId}
+                onChange={handleInputChange}
+                >
+                {suppliers.map((supplier) => (
+                    <MenuItem key={supplier.id} value={supplier.id}>{supplier.name}</MenuItem>
+                ))}
+                </Select>
+            </FormControl>
+
+            {/* Select para Estado */}
+            <FormControl fullWidth margin="normal">
+                <InputLabel>Estado</InputLabel>
+                <Select
+                label="Estado"
+                name="statusId"
+                value={newProduct.statusId}
+                onChange={handleInputChange}
+                >
+                {statuses.map((status) => (
+                    <MenuItem key={status.id} value={status.id}>{status.name}</MenuItem>
+                ))}
+                </Select>
+            </FormControl>
+
+            <Button variant="contained" color="primary" onClick={handleCreateOrUpdateProduct}>
+                {newProduct.id ? 'Guardar Cambios' : 'Agregar'}
             </Button>
-
-            {/* Tabla de productos filtrados */}
-            <TableContainer component={Paper} sx={{ marginTop: 3 }}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>ID</TableCell>
-                            <TableCell>Nombre</TableCell>
-                            <TableCell>Precio</TableCell>
-                            <TableCell>Cantidad</TableCell>
-                            <TableCell>Acciones</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {productosFiltrados.length > 0 ? (
-                            productosFiltrados.map((producto) => (
-                                <TableRow key={producto.id}>
-                                    <TableCell>{producto.id}</TableCell>
-                                    <TableCell>{producto.nombre}</TableCell>
-                                    <TableCell>${producto.precio}</TableCell>
-                                    <TableCell>{producto.cantidad}</TableCell>
-                                    <TableCell>
-                                            <Button
-                                                variant="contained"
-                                                color="primary"
-                                                style={{ marginRight: '10px' }}
-                                                onClick={() => handleOpenEditModal(producto)} //Logica para desplegar modal
-                                            >
-                                                Editar
-                                            </Button>
-                                            <Button variant="contained" color="secondary" onClick={() => handleDelete(producto.id)}>
-                                                Eliminar
-                                            </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={5}>
-                                    <Typography>No se encontraron productos</Typography>
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-            <Snackbar
-                open={openSnackbar}
-                autoHideDuration={6000}
-                onClose={handleCloseSnackbar}
-                message={`Producto ${deletedProducto} eliminado`}
-            />
-            <Modal open={openModal} onClose={handleCloseModal}>
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: 400,
-                        bgcolor: 'background.paper',
-                        boxShadow: 24,
-                        p: 4,
-                    }}
-                >
-                    <Typography variant="h6" gutterBottom>
-                        Agregar Producto
-                    </Typography>
-                    <TextField
-                        label="Nombre"
-                        name="nombre"
-                        value={newProducto.nombre}
-                        onChange={handleInputChange}
-                        fullWidth
-                        margin="normal"
-                    />
-                    <TextField
-                        label="Precio"
-                        name="precio"
-                        value={newProducto.precio}
-                        onChange={handleInputChange}
-                        fullWidth
-                        margin="normal"
-                    />
-
-                    <TextField
-                        label="Cantidad"
-                        name="cantidad"
-                        value={newProducto.cantidad}
-                        onChange={handleInputChange}
-                        fullWidth
-                        margin="normal"
-                    />
-                    <Button variant="contained" color="primary" onClick={handleAddProducto}>
-                        Agregar
-                    </Button>
-                </Box>
-            </Modal>
-
-            {/* Modal para editar proveedor */}
-            <Modal open={openEditModal} onClose={handleCloseEditModal}>
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: 400,
-                        bgcolor: 'background.paper',
-                        boxShadow: 24,
-                        p: 4,
-                    }}
-                >
-                    <Typography variant="h6" gutterBottom>
-                        Editar Producto
-                    </Typography>
-                    {selectedProducto && (
-                        <>
-                            <TextField
-                                label="Nombre"
-                                name="nombre"
-                                value={selectedProducto.nombre}
-                                onChange={handleInputChange}
-                                fullWidth
-                                margin="normal"
-                            />
-                            <TextField
-                                label="Precio"
-                                name="precio"
-                                value={selectedProducto.precio}
-                                onChange={handleInputChange}
-                                fullWidth
-                                margin="normal"
-                            />
-
-                            <TextField
-                                label="Cantidad"
-                                name="cantidad"
-                                value={selectedProducto.cantidad}
-                                onChange={handleInputChange}
-                                fullWidth
-                                margin="normal"
-                            />
-
-                            <Button variant="contained" color="primary" onClick={handleEditProducto}>
-                                Guardar Cambios
-                            </Button>
-                        </>
-                    )}
-                </Box>
-            </Modal>
+            </Box>
+        </Modal>
         </Box>
     );
 };
