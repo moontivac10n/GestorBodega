@@ -10,7 +10,7 @@ const Navbar = () => {
           Gestor de Bodega
         </Typography>
         <Box sx={{ display: 'flex', gap: '15px' }}>
-          <Button color="inherit" component={Link} to="/">
+          <Button color="inherit" component={Link} to="/dashboard">
             Inicio
           </Button>
           <Button color="inherit" component={Link} to="/inventario">
