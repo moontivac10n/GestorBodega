@@ -8,27 +8,29 @@ import {
 
 const Bodega = () => {
     const { auth } = useAuth();
-    const [bodegas, setBodegas] = useState([]);
-    const [newBodega, setNewBodega] = useState({ name: '', description: '' });
-    const [selectedBodega, setSelectedBodega] = useState(null);
+    const [warehouses, setWarehouses] = useState([]);
+    const [newWarehouse, setNewWarehouse] = useState({ name: '', location: '' });
+    const [editWarehouse, setEditWarehouse] = useState(null);
     const [openModal, setOpenModal] = useState(false);
     const [openEditModal, setOpenEditModal] = useState(false);
-    const [deletedBodega, setDeletedBodega] = useState('');
-    const [editedBodega, setEditedBodega] = useState('');
+    const [deletedWarehouse, setDeletedWarehouse] = useState('');
+    const [editedWarehouse, setEditedWarehouse] = useState('');
     const [openSnackbar, setOpenSnackbar] = useState(false);
+    const [error, setError] = useState(null);
+    //const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchBodegas = async () => {
+        const fetchWarehouse = async () => {
             try {
-                const response = await axios.get('http://localhost:4000/bodega/', {
+                const response = await axios.get('http://localhost:4000/warehouse/', {
                     headers: { Authorization: `Bearer ${auth.token}` },
                 });
-                setBodegas(response.data);
+                setWarehouses(response.data);
             } catch (error) {
                 console.error("Error al obtener bodegas:", error);
             }
         };
-        fetchBodegas();
+        fetchWarehouse();
     }, [auth.token]);
 
     // Handle open and close modals
@@ -36,59 +38,68 @@ const Bodega = () => {
     const handleCloseModal = () => setOpenModal(false);
 
     const handleOpenEditModal = (bodega) => {
-        setSelectedBodega(bodega);
+        setEditWarehouse(bodega);
         setOpenEditModal(true);
     };
 
     const handleCloseEditModal = () => {
         setOpenEditModal(false);
-        setSelectedBodega(null);
+        setEditWarehouse(null);
     };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        if (selectedBodega) {
-            setSelectedBodega({ ...selectedBodega, [name]: value });
+        if (editWarehouse) {
+            setEditWarehouse({ ...editWarehouse, [name]: value });
         } else {
-            setNewBodega({ ...newBodega, [name]: value });
+            setNewWarehouse({ ...newWarehouse, [name]: value });
         }
     };
 
-    const handleCreateBodega = async () => {
+    const handleCreateWarehouse = async (e) => {
+        e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:4000/bodega/', newBodega, {
-                headers: { Authorization: `Bearer ${auth.token}` },
+            const companyId = auth.user.companyId;
+
+            const response = await axios.post('http://localhost:4000/warehouse', {
+                ...newWarehouse,
+                companyId // Incluir companyId aqui
+            }, {
+                headers: {
+                    Authorization: `Bearer ${auth.token}`,
+                },
             });
-            setBodegas([...bodegas, response.data]);
-            setNewBodega({ name: '', description: '' });
+            setWarehouses([...warehouses, response.data]);
+            setNewWarehouse({ name: '', location: '' });
             handleCloseModal();
         } catch (error) {
-            console.error("Error al crear bodega:", error);
+            console.error("Error al crear la bodega:", error);
+            setError('Error al crear la bodega');
         }
     };
 
-    const handleUpdateBodega = async () => {
+    const handleUpdateWarehouse = async () => {
         try {
-            const response = await axios.put(`http://localhost:4000/bodega/${selectedBodega.id}`, selectedBodega, {
+            const response = await axios.put(`http://localhost:4000/warehouse/${editWarehouse.id}`, editWarehouse, {
                 headers: { Authorization: `Bearer ${auth.token}` },
             });
-            setBodegas(bodegas.map(bdg => (bdg.id === selectedBodega.id ? response.data : bdg)));
-            setEditedBodega(response.data.name);
-            setSelectedBodega(null);
+            setWarehouses(warehouses.map(bdg => (bdg.id === editWarehouse.id ? response.data : bdg)));
+            setEditedWarehouse(response.data.name);
+            setEditWarehouse(null);
             handleCloseEditModal();
         } catch (error) {
             console.error("Error al actualizar bodega:", error);
         }
     };
 
-    const handleDeleteBodega = async (id) => {
+    const handleDeleteWarehouse = async (id) => {
         try {
-            const bodegaToDelete = bodegas.find((bodega) => bodega.id === id);
-            await axios.delete(`http://localhost:4000/bodega/${id}`, {
+            const warehouseToDelete = warehouses.find((warehouse) => warehouse.id === id);
+            await axios.delete(`http://localhost:4000/warehouse/${id}`, {
                 headers: { Authorization: `Bearer ${auth.token}` },
             });
-            setBodegas(bodegas.filter((bodega) => bodega.id !== id));
-            setDeletedBodega(bodegaToDelete.name);
+            setWarehouses(warehouses.filter((warehouse) => warehouse.id !== id));
+            setDeletedWarehouse(warehouseToDelete.name);
             setOpenSnackbar(true);
         } catch (error) {
             console.error("Error al eliminar bodega:", error);
@@ -117,30 +128,30 @@ const Bodega = () => {
                         <TableRow>
                             <TableCell>ID</TableCell>
                             <TableCell>Bodega</TableCell>
-                            <TableCell>Descripción</TableCell>
+                            <TableCell>Locacion</TableCell>
                             <TableCell>Acciones</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {bodegas.length > 0 ? (
-                            bodegas.map((bodega) => (
-                                <TableRow key={bodega.id}>
-                                    <TableCell>{bodega.id}</TableCell>
-                                    <TableCell>{bodega.name}</TableCell>
-                                    <TableCell>{bodega.description}</TableCell>
+                        {warehouses.length > 0 ? (
+                            warehouses.map((warehouse) => (
+                                <TableRow key={warehouse.id}>
+                                    <TableCell>{warehouse.id}</TableCell>
+                                    <TableCell>{warehouse.name}</TableCell>
+                                    <TableCell>{warehouse.location}</TableCell>
                                     <TableCell>
                                         <Button
                                             variant="contained"
                                             color="primary"
                                             sx={{ marginRight: 1 }}
-                                            onClick={() => handleOpenEditModal(bodega)}
+                                            onClick={() => handleOpenEditModal(warehouse)}
                                         >
                                             Editar
                                         </Button>
                                         <Button
                                             variant="contained"
                                             color="secondary"
-                                            onClick={() => handleDeleteBodega(bodega.id)}
+                                            onClick={() => handleDeleteWarehouse(warehouse.id)}
                                         >
                                             Eliminar
                                         </Button>
@@ -163,14 +174,14 @@ const Bodega = () => {
                 open={openSnackbar}
                 autoHideDuration={6000}
                 onClose={handleCloseSnackbar}
-                message={`Bodega ${deletedBodega} eliminada`}
+                message={`Bodega ${deletedWarehouse} eliminada`}
             />
 
             <Snackbar
-                open={!!editedBodega} // Show snackbar if a bodega was edited
+                open={!!editedWarehouse} // Show snackbar if a bodega was edited
                 autoHideDuration={6000}
                 onClose={handleCloseSnackbar}
-                message={`Bodega ${editedBodega} actualizada`}
+                message={`Bodega ${editedWarehouse} actualizada`}
             />
 
             {/* Modal to create a new bodega */}
@@ -193,20 +204,20 @@ const Bodega = () => {
                     <TextField
                         label="Nombre"
                         name="name"
-                        value={newBodega.name}
+                        value={newWarehouse.name}
                         onChange={handleInputChange}
                         fullWidth
                         margin="normal"
                     />
                     <TextField
-                        label="Descripción"
-                        name="description"
-                        value={newBodega.description}
+                        label="Locacion"
+                        name="location"
+                        value={newWarehouse.location}
                         onChange={handleInputChange}
                         fullWidth
                         margin="normal"
                     />
-                    <Button variant="contained" color="primary" onClick={handleCreateBodega}>
+                    <Button variant="contained" color="primary" onClick={handleCreateWarehouse}>
                         Crear Bodega
                     </Button>
                 </Box>
@@ -229,25 +240,25 @@ const Bodega = () => {
                     <Typography variant="h6" gutterBottom>
                         Editar Bodega
                     </Typography>
-                    {selectedBodega && (
+                    {editWarehouse && (
                         <>
                             <TextField
                                 label="Nombre"
                                 name="name"
-                                value={selectedBodega.name}
+                                value={editWarehouse.name}
                                 onChange={handleInputChange}
                                 fullWidth
                                 margin="normal"
                             />
                             <TextField
-                                label="Descripción"
-                                name="description"
-                                value={selectedBodega.description}
+                                label="Locacion"
+                                name="location"
+                                value={editWarehouse.location}
                                 onChange={handleInputChange}
                                 fullWidth
                                 margin="normal"
                             />
-                            <Button variant="contained" color="primary" onClick={handleUpdateBodega}>
+                            <Button variant="contained" color="primary" onClick={handleUpdateWarehouse}>
                                 Guardar Cambios
                             </Button>
                         </>
