@@ -15,6 +15,7 @@ import Register from './pages/Register';
 import Proveedores from './pages/Proveedores';
 import Reportes from './pages/Reportes';
 import Ventas from './pages/Ventas';
+import Bodega from './pages/Bodega';
 
 const theme = createTheme({
   palette: {
@@ -66,7 +67,7 @@ const AppContent = () => {
                   : <Navigate to="/login" />
               }
             />
-
+            <Route path="/bodega" element={<Bodega />} />
             <Route path="/inventario" element={<Inventario />} />
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/categorias" element={<Categorias />} />
