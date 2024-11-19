@@ -1,40 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Typography, Snackbar, Modal } from '@mui/material';
+import axios from 'axios';
+import { TextField, Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Typography, Modal, MenuItem, Select, InputLabel, FormControl, List, ListItem, ListItemText, Snackbar } from '@mui/material';
+import { useAuth } from '../context/AuthContext';
 
 const Inventario = () => {
-    const [productos, setProductos] = useState([]);
+    const { auth } = useAuth();
+    const [products, setProducts] = useState([]);
+    const [inventories, setInventories] = useState([]);
+    const [warehouses, setWarehouses] = useState([]);
     const [openSnackbar, setOpenSnackbar] = useState(false);
-    const [deletedInventario, setDeletedInventario] = useState('');
+    const [deletedInventory, setDeletedInventory] = useState('');
     const [openModal, setOpenModal] = useState(false);
     const [openEditModal, setOpenEditModal] = useState(false);
-    const [selectedInventario, setSelectedInventario] = useState(null);
-    const [editedInventario, setEditedInventario] = useState('');
-    const [newInventario, setNewInventario] = useState({ nombre: '', precio: '', cantidad: '' });
-    const [searchTerm, setSearchTerm] = useState(''); // Estado para la búsqueda
-
-    // Filtrar productos basado en el término de búsqueda
-    const productosFiltrados = productos.filter((producto) =>
-        producto.nombre && producto.nombre.toLowerCase().includes(searchTerm.toLowerCase()) // Verifica si `producto.nombre` está definido
-    );
+    const [editedInventory, setEditedInventory] = useState('');
+    const [openAddProductModal, setOpenAddProductModal] = useState(false);
+    const [openProductsModal, setOpenProductsModal] = useState(false);
+    const [selectedInventory, setSelectedInventory] = useState(null);
+    const [newInventory, setNewInventory] = useState({ name: '', warehouseId: '' });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Simulación de datos de productos
-        const inventarioSimulado = [
-            { id: 1, nombre: 'Queso', precio: 1200, cantidad: 300 },
-            { id: 2, nombre: 'Leche', precio: 2000, cantidad: 150 },
-        ];
-        setProductos(inventarioSimulado);
-    }, []);
+        const fetchData = async () => {
+            try {
+                const [inventoriesRes, warehousesRes] = await Promise.all([
+                    axios.get('http://localhost:4000/inventory', {
+                        headers: { Authorization: `Bearer ${auth.token}` },
+                    }),
+                    axios.get('http://localhost:4000/warehouse', {
+                        headers: { Authorization: `Bearer ${auth.token}` },
+                    }),
+                ]);
+                setInventories(inventoriesRes.data);
+                setWarehouses(warehousesRes.data);
+            } catch (err) {
+                console.error("Error al obtener datos:", err);
+                setError('Error al obtener inventarios o almacenes');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, [auth.token]);
 
     const handleOpenModal = () => {
+        setNewInventory({
+            id: '',
+            name: '',
+            warehouseId: '',
+            });
         setOpenModal(true);
-    };
-
-    const handleDelete = (id) => {
-        const inventarioEliminado = productos.find(inventario => inventario.id === id);
-        setProductos(productos.filter(inventario => inventario.id !== id));
-        setDeletedInventario(inventarioEliminado.nombre);
-        setOpenSnackbar(true);
     };
 
     const handleCloseSnackbar = () => {
@@ -45,126 +60,176 @@ const Inventario = () => {
         setOpenModal(false);
     };
 
-    const handleOpenEditModal = (inventario) => {
-        setSelectedInventario(inventario);
+    const handleOpenEditModal = (inventory) => {
+        setNewInventory({
+        id: inventory.id,
+        name: inventory.name,
+        warehouseId: inventory.warehouseId,
+        });
         setOpenEditModal(true);
     };
 
     const handleCloseEditModal = () => {
         setOpenEditModal(false);
-        setSelectedInventario(null); // Reiniciar selección
+        setSelectedInventory(null); // Reiniciar selección
     };
 
-        const handleEditInventario = () => {
-        // Primero, actualizamos los productos con los cambios
-        const updatedProductos = productos.map(producto =>
-            producto.id === selectedInventario.id ? selectedInventario : producto
-        );
-        setProductos(updatedProductos); // Actualizamos el estado de los productos
-
-        // Luego, actualizamos el estado de `editedInventario`
-        setEditedInventario(selectedInventario.nombre); // Aquí ya `updatedProductos` está creado
-
-        // Cerramos el modal
-        handleCloseEditModal();
+    const handleOpenAddProductModal = (inventory) => {
+        setSelectedInventory(inventory);
+        setOpenAddProductModal(true);
     };
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        if (selectedInventario) {
-            setSelectedInventario({ ...selectedInventario, [name]: value });
-        } else {
-            setNewInventario({ ...newInventario, [name]: value });
+
+    const handleCloseAddProductModal = () => {
+        setOpenAddProductModal(false);
+        setSelectedInventory(null);
+    };
+
+    const handleOpenProductsModal = async (inventory) => {
+        setSelectedInventory(inventory);
+        await fetchProductsInInventory(inventory.id);
+        setOpenProductsModal(true);
+    };
+
+    const handleCloseProductsModal = () => {
+        setOpenProductsModal(false);
+        setSelectedInventory(null);
+    };
+
+    const fetchProductsInInventory = async (inventoryId) => {
+        try {
+            const response = await axios.get(`http://localhost:4000/inventory/${inventoryId}/product`, {
+                headers: { Authorization: `Bearer ${auth.token}` },
+            });
+            setProducts(response.data);
+        } catch (err) {
+            console.error("Error al obtener productos en inventario:", err);
+            setError('Error al obtener productos en inventario');
         }
     };
 
-    const handleAddInventario = () => {
-        const id = productos.length ? productos[productos.length - 1].id + 1 : 1; // Generar un nuevo ID
-        setProductos([...productos, { id, ...newInventario }]);
-        setNewInventario({ nombre: '', precio: '', cantidad: '' }); // Reiniciar el formulario
-        handleCloseModal();
+    const handleProductAdded = async (newProduct) => {
+        try {
+            const existingProduct = products.find(product => product.id === newProduct.id);
+            if (existingProduct) {
+                const updatedProducts = products.map(product => 
+                    product.id === newProduct.id
+                        ? { ...product, quantity: product.quantity + newProduct.quantity }
+                        : product
+                );
+                setProducts(updatedProducts);
+            } else {
+                setProducts((prevProducts) => [...prevProducts, newProduct]);
+            }
+            handleCloseAddProductModal();
+        } catch (err) {
+            console.error("Error al agregar producto:", err);
+            setError('Error al agregar producto');
+            handleCloseAddProductModal();
+        }
     };
+
+    const handleCreateInventory = async () => {
+        try {
+            const response = await axios.post('http://localhost:4000/inventory', newInventory, {
+                headers: { Authorization: `Bearer ${auth.token}` },
+            });
+
+            const associatedWarehouse = warehouses.find(warehouse => warehouse.id === newInventory.warehouseId);
+
+            setInventories([...inventories, { ...response.data, warehouse: associatedWarehouse }]);
+            setNewInventory({ name: '', warehouseId: '' });
+            handleCloseModal();
+        } catch (err) {
+            console.error("Error al crear inventario:", err);
+            setError('Error al crear inventario');
+        }
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        if (selectedInventory) {
+            setSelectedInventory({ ...selectedInventory, [name]: value });
+        } else {
+            setNewInventory({ ...newInventory, [name]: value });
+        }
+    };
+
+    if (loading) {
+        return <p>Cargando inventarios...</p>;
+    }    
 
     return (
         <Box sx={{ padding: 3 }}>
             <Typography variant="h4" gutterBottom>
                 Gestión de Inventario
             </Typography>
-
-            {/* Campo de búsqueda */}
-            <TextField
-                label="Buscar producto"
-                fullWidth
-                margin="normal"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
             <Button variant="contained" color="primary" style={{ marginBottom: '20px' }} onClick={handleOpenModal}>
-                Agregar Producto
+                Agregar Inventario
             </Button>
 
-            {/* Tabla de productos filtrados */}
             <TableContainer component={Paper} sx={{ marginTop: 3 }}>
                 <Table>
                     <TableHead>
                         <TableRow>
                             <TableCell>ID</TableCell>
                             <TableCell>Nombre</TableCell>
-                            <TableCell>Precio</TableCell>
-                            <TableCell>Cantidad</TableCell>
+                            <TableCell>Bodega</TableCell>
                             <TableCell>Acciones</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {productosFiltrados.length > 0 ? (
-                            productosFiltrados.map((producto) => (
-                                <TableRow key={producto.id}>
-                                    <TableCell>{producto.id}</TableCell>
-                                    <TableCell>{producto.nombre}</TableCell>
-                                    <TableCell>${producto.precio}</TableCell>
-                                    <TableCell>{producto.cantidad}</TableCell>
-                                    <TableCell>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            style={{ marginRight: '10px' }}
-                                            onClick={() => handleOpenEditModal(producto)} //Logica para desplegar modal
-                                        >
-                                            Editar
-                                        </Button>
-                                        <Button variant="contained" color="secondary" onClick={() => handleDelete(producto.id)}>
-                                            Eliminar
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={5}>
-                                    <Typography>No se encontraron productos</Typography>
+                        {inventories.map((inventory) => (
+                            <TableRow key={inventory.id}>
+                                <TableCell>{inventory.id}</TableCell>
+                                <TableCell>{inventory.name}</TableCell>
+                                <TableCell>{inventory.warehouse.name}</TableCell>
+                                <TableCell>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        onClick={() => handleOpenAddProductModal(inventory)}
+                                    >
+                                        Agregar Producto
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        color="secondary"
+                                        onClick={() => handleOpenProductsModal(inventory)}
+                                    >
+                                        Ver Productos
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        style={{ marginRight: '10px' }}
+                                        onClick={() => handleOpenEditModal(inventory)} //Logica para desplegar modal
+                                    >
+                                        Editar
+                                    </Button>
                                 </TableCell>
                             </TableRow>
-                        )}
+                        ))}
                     </TableBody>
                 </Table>
             </TableContainer>
 
-            {/* Snackbar para eliminar producto */}
+            {/* Snackbar para eliminar inventario */}
             <Snackbar
                 open={openSnackbar}
                 autoHideDuration={6000}
                 onClose={handleCloseSnackbar}
-                message={`Producto ${deletedInventario} eliminado`}
+                message={`Inventario ${deletedInventory} eliminado`}
             />
 
-            {/* Snackbar para editar producto */}
+            {/* Snackbar para editar inventario */}
             <Snackbar
-                open={!!editedInventario}
+                open={!!editedInventory}
                 autoHideDuration={6000}
                 onClose={handleCloseSnackbar}
-                message={`Producto ${editedInventario} editado`}
+                message={`Inventario ${editedInventory} editado`}
             />    
 
-            {/* Modal para agregar producto */}
+            {/* Modal para agregar inventario */}
             <Modal open={openModal} onClose={handleCloseModal}>
                 <Box
                     sx={{
@@ -179,40 +244,61 @@ const Inventario = () => {
                     }}
                 >
                     <Typography variant="h6" gutterBottom>
-                        Agregar Producto
+                        Agregar Inventario
                     </Typography>
                     <TextField
                         label="Nombre"
-                        name="nombre"
-                        value={newInventario.nombre}
+                        name="name"
+                        value={newInventory.name}
                         onChange={handleInputChange}
                         fullWidth
                         margin="normal"
                     />
-                    <TextField
-                        label="Precio"
-                        name="precio"
-                        value={newInventario.precio}
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>Bodega</InputLabel>
+                        <Select
+                        label="Bodega"
+                        name="warehouseId"
+                        value={newInventory.warehouseId}
                         onChange={handleInputChange}
-                        fullWidth
-                        margin="normal"
-                    />
-                    <TextField
-                        label="Cantidad"
-                        name="cantidad"
-                        value={newInventario.cantidad}
-                        onChange={handleInputChange}
-                        fullWidth
-                        margin="normal"
-                    />
-                    <Button variant="contained" color="primary" onClick={handleAddInventario}>
+                        >
+                        {warehouses.map((warehouse) => (
+                            <MenuItem key={warehouse.id} value={warehouse.id}>{warehouse.name}</MenuItem>
+                        ))}
+                        </Select>
+                    </FormControl>
+                    <Button variant="contained" color="primary" onClick={handleCreateInventory}>
                         Agregar
                     </Button>
                 </Box>
             </Modal>
 
-            {/* Modal para editar producto */}
-            <Modal open={openEditModal} onClose={handleCloseEditModal}>
+            {/* Modal para agregar productos */}
+            <Modal open={openAddProductModal} onClose={handleCloseAddProductModal}>
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 400,
+                        bgcolor: 'background.paper',
+                        boxShadow: 24,
+                        p: 4,
+                    }}
+                >
+                    <AddProductForm
+                        inventoryId={selectedInventory?.id}
+                        authToken={auth.token}
+                        onProductAdded={handleProductAdded}
+                        fetchProductsInInventory={fetchProductsInInventory}
+                        handleCloseAddProductModal={handleCloseAddProductModal}
+                    />
+                </Box>
+            </Modal>
+
+            {/* Modal para ver productos */}
+            <Modal open={openProductsModal} onClose={handleCloseProductsModal}>
                 <Box
                     sx={{
                         position: 'absolute',
@@ -226,41 +312,148 @@ const Inventario = () => {
                     }}
                 >
                     <Typography variant="h6" gutterBottom>
-                        Editar Producto
+                        Productos en el Inventario: {selectedInventory?.name}
                     </Typography>
-                    {selectedInventario && (
-                        <>
-                            <TextField
-                                label="Nombre"
-                                name="nombre"
-                                value={selectedInventario.nombre}
-                                onChange={handleInputChange}
-                                fullWidth
-                                margin="normal"
-                            />
-                            <TextField
-                                label="Precio"
-                                name="precio"
-                                value={selectedInventario.precio}
-                                onChange={handleInputChange}
-                                fullWidth
-                                margin="normal"
-                            />
-                            <TextField
-                                label="Cantidad"
-                                name="cantidad"
-                                value={selectedInventario.cantidad}
-                                onChange={handleInputChange}
-                                fullWidth
-                                margin="normal"
-                            />
-                            <Button variant="contained" color="primary" onClick={handleEditInventario}>
-                                Guardar Cambios
-                            </Button>
-                        </>
+                    {products.length > 0 ? (
+                        <List>
+                            {products.map((product) => (
+                                <ListItem key={product.id}>
+                                    <ListItemText
+                                        primary={product.product.name}
+                                        secondary={`Stock: ${product.quantity}`}
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    ) : (
+                        <Typography>No hay productos en este inventario.</Typography>
                     )}
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleCloseProductsModal}
+                    >
+                        Cerrar
+                    </Button>
                 </Box>
             </Modal>
+        </Box>
+    );
+};
+
+const AddProductForm = ({ inventoryId, authToken, onProductAdded, fetchProductsInInventory, handleCloseAddProductModal }) => {
+    const [productsList, setProductsList] = useState([]);
+    const [selectedProductId, setSelectedProductId] = useState('');
+    const [quantity, setQuantity] = useState(1);
+    const [transactionType, setTransactionType] = useState('purchase');
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const response = await axios.get('http://localhost:4000/product', {
+                    headers: { Authorization: `Bearer ${authToken}` },
+                });
+                setProductsList(response.data);
+            } catch (err) {
+                console.error("Error al obtener productos:", err);
+                setError('Error al obtener lista de productos');
+            }
+        };
+        fetchProducts();
+    }, [authToken]);
+
+    const handleAddProduct = async (e) => {
+        e.preventDefault();
+        if (!selectedProductId || quantity <= 0) {
+            setError("Seleccione un producto y una cantidad válida.");
+            return;
+        }
+
+        try {
+            const inventoryResponse = await axios.post(
+                `http://localhost:4000/inventory/${inventoryId}/product`,
+                {
+                    productId: parseInt(selectedProductId),
+                    quantity: quantity,
+                    transactionType,
+                },
+                {
+                    headers: { Authorization: `Bearer ${authToken}` },
+                }
+            );
+            console.log("Inventario actualizado:", inventoryResponse.data);
+
+            const transactionData = {
+                productId: parseInt(selectedProductId),
+                quantity: quantity,
+                transactionType,
+                inventoryId,
+                userId: 1, // Placeholder for actual user ID
+            };
+
+            const response = await axios.post(
+                `http://localhost:4000/transaction`,
+                transactionData,
+                {
+                    headers: { Authorization: `Bearer ${authToken}` },
+                }
+            );
+            console.log("Transacción exitosa:", response.data);
+            onProductAdded(response.data);
+            fetchProductsInInventory(inventoryId); // Refresh inventory
+            handleCloseAddProductModal();
+        } catch (err) {
+            console.error("Error al agregar producto:", err);
+            setError("Error al agregar el producto.");
+            handleCloseAddProductModal();
+        }
+    };
+
+    return (
+        <Box sx={{ width: '100%' }}>
+            <Typography variant="h6" gutterBottom>
+                Agregar Producto al Inventario
+            </Typography>
+            {error && <Typography color="error">{error}</Typography>}
+            <form onSubmit={handleAddProduct}>
+                <FormControl fullWidth sx={{ marginBottom: 2 }}>
+                    <InputLabel id="product-select-label">Producto</InputLabel>
+                    <Select
+                        labelId="product-select-label"
+                        value={selectedProductId}
+                        onChange={(e) => setSelectedProductId(e.target.value)}
+                    >
+                        {productsList.map((product) => (
+                            <MenuItem key={product.id} value={product.id}>
+                                {product.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <TextField
+                    label="Cantidad"
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    fullWidth
+                    sx={{ marginBottom: 2 }}
+                />
+                <FormControl fullWidth sx={{ marginBottom: 2 }}>
+                    <InputLabel id="transaction-type-label">Tipo de Transacción</InputLabel>
+                    <Select
+                        labelId="transaction-type-label"
+                        value={transactionType}
+                        onChange={(e) => setTransactionType(e.target.value)}
+                    >
+                        <MenuItem value="purchase">Compra</MenuItem>
+                        <MenuItem value="sale">Venta</MenuItem>
+                    </Select>
+                </FormControl>
+                <Button variant="contained" color="primary" type="submit">
+                    Agregar Producto
+                </Button>
+            </form>
         </Box>
     );
 };
