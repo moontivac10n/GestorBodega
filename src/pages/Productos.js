@@ -20,6 +20,7 @@ const Productos = () => {
         description: '',
         sku: '',
         price: '',
+        priceSell: '',
         categoryId: '',
         supplierId: '',
         statusId: '',
@@ -73,6 +74,7 @@ const Productos = () => {
         description: '',
         sku: '',
         price: '',
+        priceSell: '',
         categoryId: '',
         supplierId: '',
         statusId: '',
@@ -92,6 +94,7 @@ const Productos = () => {
         description: product.description,
         sku: product.sku,
         price: product.price.toString(),
+        priceSell: product.priceSell.toString(),
         categoryId: product.categoryId.toString(),
         supplierId: product.supplierId.toString(),
         statusId: product.statusId.toString(),
@@ -111,7 +114,7 @@ const Productos = () => {
 
     const handleCreateOrUpdateProduct = async () => {
         // Validación de campos
-        if (!newProduct.name || !newProduct.price || !newProduct.categoryId || !newProduct.supplierId || !newProduct.statusId) {
+        if (!newProduct.name || !newProduct.price || !newProduct.priceSell || !newProduct.categoryId || !newProduct.supplierId || !newProduct.statusId) {
         setError('Por favor, complete todos los campos requeridos.');
         return;
         }
@@ -119,6 +122,7 @@ const Productos = () => {
         const productData = {
         ...newProduct,
         price: parseFloat(newProduct.price),
+        priceSell: parseFloat(newProduct.priceSell),
         categoryId: parseInt(newProduct.categoryId, 10),
         supplierId: parseInt(newProduct.supplierId, 10),
         statusId: parseInt(newProduct.statusId, 10),
@@ -145,6 +149,7 @@ const Productos = () => {
             description: '',
             sku: '',
             price: '',
+            priceSell: '',
             categoryId: '',
             supplierId: '',
             statusId: '',
@@ -198,6 +203,7 @@ const Productos = () => {
                 <TableCell>Descripción</TableCell>
                 <TableCell>SKU</TableCell>
                 <TableCell>Precio</TableCell>
+                <TableCell>Precio de Venta</TableCell>
                 <TableCell>Categoria</TableCell>
                 <TableCell>Proveedor</TableCell>
                 <TableCell>Acciones</TableCell>
@@ -212,6 +218,7 @@ const Productos = () => {
                     <TableCell>{product.description}</TableCell>
                     <TableCell>{product.sku}</TableCell>
                     <TableCell>${product.price}</TableCell>
+                    <TableCell>${product.priceSell}</TableCell>
                     <TableCell>{product.category.name}</TableCell>
                     <TableCell>{product.supplier.name}</TableCell>
                     <TableCell>
@@ -240,6 +247,7 @@ const Productos = () => {
             <TextField label="Descripción" name="description" value={newProduct.description} onChange={handleInputChange} fullWidth margin="normal" />
             <TextField label="SKU" name="sku" value={newProduct.sku} onChange={handleInputChange} fullWidth margin="normal" />
             <TextField label="Precio" name="price" value={newProduct.price} onChange={handleInputChange} fullWidth margin="normal" />
+            <TextField label="Precio de Venta" name="priceSell" value={newProduct.priceSell} onChange={handleInputChange} fullWidth margin="normal" />
 
             {/* Select para Categoría */}
             <FormControl fullWidth margin="normal">
