@@ -29,6 +29,7 @@ const Productos = () => {
     const [categories, setCategories] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
     const [statuses, setStatuses] = useState([]);
+    const [image, setImage] = useState(null);
     const [error, setError] = useState(null);
 
     const { userDetails, loading, error: userError } = useFetchUserDetails(auth.user.id, auth.token);
@@ -126,20 +127,33 @@ const Productos = () => {
         categoryId: parseInt(newProduct.categoryId, 10),
         supplierId: parseInt(newProduct.supplierId, 10),
         statusId: parseInt(newProduct.statusId, 10),
-        companyId: userDetails?.companyId,
+        companyId: parseInt(userDetails?.companyId, 10),
         };
+
+        // crear formData y agregar los datos
+        const formData = new FormData();
+        for (const key in productData) {
+            formData.append(key, productData[key]);
+        }
+
+        // agregar la imagen solo si esta presente
+        if (image) {
+            formData.append('image', image);
+        }
 
     try {
         let res;
         if (newProduct.id) {
             // Actualizar producto
-            res = await axios.put(`http://localhost:4000/product/${newProduct.id}`, productData, {
+            res = await axios.put(`http://localhost:4000/product/${newProduct.id}`, formData, {
             headers: { Authorization: `Bearer ${auth.token}` },
             });
         } else {
             // Crear nuevo producto
-            res = await axios.post('http://localhost:4000/product', productData, {
-            headers: { Authorization: `Bearer ${auth.token}` },
+            res = await axios.post('http://localhost:4000/product', formData, {
+            headers: { Authorization: `Bearer ${auth.token}`,
+            'Content-Type': 'multipart/form-data'
+        },
             });
         }
 
@@ -155,6 +169,7 @@ const Productos = () => {
             statusId: '',
             image_url: '',
         });
+        setImage(null);
 
         const productsRes = await axios.get('http://localhost:4000/product', {
             headers: { Authorization: `Bearer ${auth.token}` },
@@ -260,6 +275,13 @@ const Productos = () => {
             <TextField label="SKU" name="sku" value={newProduct.sku} onChange={handleInputChange} fullWidth margin="normal" />
             <TextField label="Precio" name="price" value={newProduct.price} onChange={handleInputChange} fullWidth margin="normal" />
             <TextField label="Precio de Venta" name="priceSell" value={newProduct.priceSell} onChange={handleInputChange} fullWidth margin="normal" />
+            <TextField
+                type="file"
+                fullWidth
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+                onChange={(e) => setImage(e.target.files[0])}
+            />
 
             {/* Select para Categoría */}
             <FormControl fullWidth margin="normal">
