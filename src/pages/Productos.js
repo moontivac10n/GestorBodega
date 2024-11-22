@@ -199,6 +199,7 @@ const Productos = () => {
             <TableHead>
                 <TableRow>
                 <TableCell>ID</TableCell>
+                <TableCell>Imagen</TableCell>
                 <TableCell>Nombre</TableCell>
                 <TableCell>Descripción</TableCell>
                 <TableCell>SKU</TableCell>
@@ -214,6 +215,17 @@ const Productos = () => {
                 products.map((product) => (
                     <TableRow key={product.id}>
                     <TableCell>{product.id}</TableCell>
+                    <TableCell>
+                    {product.image_url ? (
+                        <img
+                            src={product.image_url}
+                            alt={product.name}
+                            style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                        />
+                    ) : (
+                        <Typography variant="h6" color="error" align="center">X</Typography>
+                    )}
+                    </TableCell>
                     <TableCell>{product.name}</TableCell>
                     <TableCell>{product.description}</TableCell>
                     <TableCell>{product.sku}</TableCell>
