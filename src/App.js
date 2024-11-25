@@ -17,6 +17,7 @@ import Reportes from './pages/Reportes';
 import Ventas from './pages/Ventas';
 import Bodega from './pages/Bodega';
 import HistoriaProducto from './pages/HistoriaProducto';
+import Analisis from './pages/Analisis';
 
 const theme = createTheme({
   palette: {
@@ -79,6 +80,7 @@ const AppContent = () => {
             <Route path="/proveedores" element={<Proveedores />} />
             <Route path="/reportes" element={<Reportes />} />
             <Route path="/ventas" element={<Ventas />} />
+            <Route path="/analisis" element={<Analisis />} />
           </Routes>
         </div>
         <Footer />
