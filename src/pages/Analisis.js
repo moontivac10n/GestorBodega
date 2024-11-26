@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, Typography, Grid, Alert } from '@mui/material';
-import { PieChart, Pie, Cell, Tooltip } from 'recharts';
-import { People, Inventory, BarChart, MonetizationOn } from '@mui/icons-material';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { People, Inventory, BarChart as BarChartIcon, MonetizationOn, TrendingUp, CalendarToday } from '@mui/icons-material';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,7 +11,6 @@ const Analisis = () => {
     const [stockData, setStockData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A020F0'];
 
     // Función para cargar datos del backend
     const fetchAnalysis = async () => {
@@ -26,11 +25,9 @@ const Analisis = () => {
                     headers: { Authorization: `Bearer ${auth.token}` },
                 }),
             ]);
-    
+
             const parsedData = JSON.parse(analisisRes.data.summary); // Parsear la cadena JSON
             const parsedStock = JSON.parse(stockRes.data.summary);
-            console.log(parsedData); // Ver los datos parseados
-            console.log(parsedStock);
             setAnalysisData(parsedData); // Establecer los datos analizados en el estado
             setStockData(parsedStock);
         } catch (err) {
@@ -71,10 +68,10 @@ const Analisis = () => {
                                             Resumen Financiero
                                         </Typography>
                                     </div>
-                                    <Typography variant="h6" color='warning'>
+                                    <Typography variant="h6" color="warning">
                                         Total Compras: <strong>$-{analysisData.total_purchase.toFixed(2)}</strong>
                                     </Typography>
-                                    <Typography variant="h6" color='green'>
+                                    <Typography variant="h6" color="green">
                                         Total Ventas: <strong>${analysisData.total_sales.toFixed(2)}</strong>
                                     </Typography>
                                     <Typography variant="h6">
@@ -127,7 +124,7 @@ const Analisis = () => {
                             <Card style={{ backgroundColor: '#fff3e0' }}>
                                 <CardContent>
                                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                                        <BarChart fontSize="large" color="primary" />
+                                        <BarChartIcon fontSize="large" color="primary" />
                                         <Typography variant="h5" component="div" style={{ marginLeft: '10px' }}>
                                             Productos con Bajo Stock
                                         </Typography>
@@ -144,6 +141,68 @@ const Analisis = () => {
                                 </CardContent>
                             </Card>
                         </Grid>
+
+                        {/* Productos con Mayor Demanda */}
+                        <Grid item xs={12} md={6}>
+                            <Card style={{ backgroundColor: '#e8f5e9' }}>
+                                <CardContent>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <TrendingUp fontSize="large" color="primary" />
+                                        <Typography variant="h5" component="div" style={{ marginLeft: '10px' }}>
+                                            Productos con Mayor Demanda
+                                        </Typography>
+                                    </div>
+                                    {analysisData.top_demand_products && (
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <BarChart
+                                                data={analysisData.top_demand_products.map((product) => ({
+                                                    name: product.productName,
+                                                    ventas: product.total_quantity_sold,
+                                                }))}
+                                                margin={{ top: 20, right: 20, left: 20, bottom: 5 }}
+                                            >
+                                                <XAxis dataKey="name" />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Bar dataKey="ventas" fill="#82ca9d" />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        {/* Promedio de Ventas por Día */}
+                        <Grid item xs={12} md={6}>
+                            <Card style={{ backgroundColor: '#f1f8e9' }}>
+                                <CardContent>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <CalendarToday fontSize="large" color="primary" />
+                                        <Typography variant="h5" component="div" style={{ marginLeft: '10px' }}>
+                                            Promedio de Ventas por Día de la Semana
+                                        </Typography>
+                                    </div>
+                                    {analysisData.average_sales_per_day && (
+                                        <ResponsiveContainer width="100%" height={300}>
+                                            <BarChart
+                                                data={analysisData.average_sales_per_day.map((day) => ({
+                                                    name: day.day_of_week,
+                                                    promedio: day.average_sales.toFixed(2),
+                                                }))}
+                                                margin={{ top: 20, right: 20, left: 20, bottom: 5 }}
+                                            >
+                                                <XAxis dataKey="name" />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Bar dataKey="promedio" fill="#4caf50" />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                    {/* Otros graficos o secciones */}
                     </Grid>
                 </>
             )}
