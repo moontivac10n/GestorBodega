@@ -320,7 +320,7 @@ const Inventario = () => {
                                 <ListItem key={product.id}>
                                     <ListItemText
                                         primary={product.product.name}
-                                        secondary={`Stock: ${product.quantity}`}
+                                        secondary={`Stock: ${product.quantity} - Minimo: ${product.minimumQuantity}`}
                                     />
                                 </ListItem>
                             ))}
