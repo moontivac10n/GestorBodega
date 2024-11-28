@@ -86,6 +86,7 @@ const Productos = () => {
 
     const handleCloseModal = () => {
         setOpenModal(false);
+        setImage(null);
     };
 
     const handleOpenEditModal = (product) => {
@@ -106,6 +107,7 @@ const Productos = () => {
 
     const handleCloseEditModal = () => {
         setOpenEditModal(false);
+        setImage(null);
     };
 
     const handleInputChange = (e) => {
@@ -116,70 +118,62 @@ const Productos = () => {
     const handleCreateOrUpdateProduct = async () => {
         // Validación de campos
         if (!newProduct.name || !newProduct.price || !newProduct.priceSell || !newProduct.categoryId || !newProduct.supplierId || !newProduct.statusId) {
-        setError('Por favor, complete todos los campos requeridos.');
-        return;
+            setError('Por favor, complete todos los campos requeridos.');
+            return;
         }
-
+    
         const productData = {
-        ...newProduct,
-        price: parseFloat(newProduct.price),
-        priceSell: parseFloat(newProduct.priceSell),
-        categoryId: parseInt(newProduct.categoryId, 10),
-        supplierId: parseInt(newProduct.supplierId, 10),
-        statusId: parseInt(newProduct.statusId, 10),
-        companyId: parseInt(userDetails?.companyId, 10),
+            ...newProduct,
+            price: parseFloat(newProduct.price),
+            priceSell: parseFloat(newProduct.priceSell),
+            categoryId: parseInt(newProduct.categoryId, 10),
+            supplierId: parseInt(newProduct.supplierId, 10),
+            statusId: parseInt(newProduct.statusId, 10),
+            companyId: parseInt(userDetails?.companyId, 10),
         };
-
+    
         // crear formData y agregar los datos
         const formData = new FormData();
         for (const key in productData) {
             formData.append(key, productData[key]);
         }
-
+    
         // agregar la imagen solo si esta presente
         if (image) {
             formData.append('image', image);
         }
-
-    try {
-        let res;
-        if (newProduct.id) {
-            // Actualizar producto
-            res = await axios.put(`http://localhost:4000/product/${newProduct.id}`, formData, {
-            headers: { Authorization: `Bearer ${auth.token}` },
+    
+        try {
+            let res;
+            if (newProduct.id) {
+                // Actualizar producto
+                console.log([...formData.entries()]);
+                res = await axios.put(`http://localhost:4000/product/${newProduct.id}`, formData, {
+                    headers: { 
+                        Authorization: `Bearer ${auth.token}`,
+                        'Content-Type': 'multipart/form-data' 
+                    },
+                });
+            } else {
+                // Crear nuevo producto
+                res = await axios.post('http://localhost:4000/product', formData, {
+                    headers: { 
+                        Authorization: `Bearer ${auth.token}`,
+                        'Content-Type': 'multipart/form-data' 
+                    },
+                });
+            }
+    
+            // Actualizar la lista de productos después de crear o actualizar
+            const productsRes = await axios.get('http://localhost:4000/product', {
+                headers: { Authorization: `Bearer ${auth.token}` },
             });
-        } else {
-            // Crear nuevo producto
-            res = await axios.post('http://localhost:4000/product', formData, {
-            headers: { Authorization: `Bearer ${auth.token}`,
-            'Content-Type': 'multipart/form-data'
-        },
-            });
-        }
-
-        setNewProduct({
-            id: '',
-            name: '',
-            description: '',
-            sku: '',
-            price: '',
-            priceSell: '',
-            categoryId: '',
-            supplierId: '',
-            statusId: '',
-            image_url: '',
-        });
-        setImage(null);
-
-        const productsRes = await axios.get('http://localhost:4000/product', {
-            headers: { Authorization: `Bearer ${auth.token}` },
-        });
-        setProducts(productsRes.data);
-        handleCloseModal();
-        handleCloseEditModal();
+            setProducts(productsRes.data);
+            handleCloseModal();
+            handleCloseEditModal();
         } catch (err) {
-        console.error("Error al crear o actualizar producto:", err);
-        setError('Error al procesar el producto');
+            console.error("Error al crear o actualizar producto:", err);
+            setError('Error al procesar el producto');
         }
     };
 
