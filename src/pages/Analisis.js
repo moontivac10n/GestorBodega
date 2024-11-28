@@ -88,7 +88,7 @@ const Analisis = () => {
                                     <div style={{ display: 'flex', alignItems: 'center' }}>
                                         <People fontSize="large" color="primary" />
                                         <Typography variant="h5" component="div" style={{ marginLeft: '10px' }}>
-                                            Posible Ganancia según el Stock
+                                            Resumen de Productos - Ganancia
                                         </Typography>
                                     </div>
                                     {analysisData.profit_summary && analysisData.profit_summary.map((item, index) => (
