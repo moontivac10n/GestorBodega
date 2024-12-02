@@ -3,13 +3,21 @@ import { Card, CardContent, Typography, Grid, Alert } from '@mui/material';
 import { People, Inventory, ShoppingCart } from '@mui/icons-material';
 import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 import Analisis from './Analisis';
+import { useAuth } from '../context/AuthContext';
+import useFetchUserDetails from '../hooks/useFetchUserDetails';
 
 const Dashboard = () => {
+  const { auth } = useAuth();
+  const userId = auth.user?.id; 
+  const token = localStorage.getItem('token');
   const [stockData, setStockData] = useState([]);
   const [usuariosCount, setUsuariosCount] = useState(0);
   const [productosCount, setProductosCount] = useState(0);
   const [transaccionesCount, setTransaccionesCount] = useState(0);
-  const stockThreshold = 30; // Define el umbral de stock bajo
+
+
+
+  const { userDetails, loading, error } = useFetchUserDetails(userId, token);
 
   useEffect(() => {
     // Simulación de obtención de datos del backend
@@ -37,6 +45,11 @@ const Dashboard = () => {
   }, []);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  const isAdmin = userDetails?.role?.name === "Admin";
+
+  if (loading) {
+    return <p>Cargando...</p>;
+  }
 
   return (
     <div style={{ padding: '20px', backgroundColor: '#f4f6f8', minHeight: '100vh' }}>
@@ -94,7 +107,8 @@ const Dashboard = () => {
         </Grid>
       </Grid>
 
-      <Analisis />
+      {/* Mostrar Analisis solo si el usuario es Admin */}
+      {isAdmin && <Analisis />}
       
       <Typography variant="h4" marginTop={5} textAlign={'center'} gutterBottom>
         Distribución de Stock
