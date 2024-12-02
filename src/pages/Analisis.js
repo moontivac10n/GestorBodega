@@ -57,7 +57,32 @@ const Analisis = () => {
 
             {analysisData && (
                 <>
+
                     <Grid container spacing={3}>
+                        {/* Productos con Bajo Stock */}
+                        <Grid item xs={12} md={12}>
+                            <Card style={{ backgroundColor: '#fff3e0' }}>
+                                <CardContent>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <BarChartIcon fontSize="large" color="primary" />
+                                        <Typography variant="h5" component="div" style={{ marginLeft: '10px' }}>
+                                            Productos con Bajo Stock
+                                        </Typography>
+                                    </div>
+                                    {stockData.low_stock && stockData.low_stock.length > 0 ? (
+                                        stockData.low_stock.map((product, index) => (
+                                            <Alert key={index} severity="warning" style={{ marginBottom: '4px' }}>
+                                                Producto <strong>{product.productName}</strong> del Inventario <strong>{product.inventoryName}</strong> tiene bajo stock. <strong>({product.quantity} unidades de {product.minimumQuantity} unidades mínimas)</strong>
+                                            </Alert>
+                                        ))
+                                    ) : (
+                                        <Typography variant="body1">No hay productos con bajo stock.</Typography>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+
                         {/* Resumen de Total Purchase, Total Sales y Balance */}
                         <Grid item xs={12} md={4}>
                             <Card style={{ backgroundColor: '#f0f4c3' }}>
@@ -115,29 +140,6 @@ const Analisis = () => {
                                             Categoría <strong>{category.categoryName}:</strong> Ventas = {category.total_sales}, Ganancia = {category.total_profit}
                                         </Typography>
                                     ))}
-                                </CardContent>
-                            </Card>
-                        </Grid>
-
-                        {/* Productos con Bajo Stock */}
-                        <Grid item xs={12} md={4}>
-                            <Card style={{ backgroundColor: '#fff3e0' }}>
-                                <CardContent>
-                                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                                        <BarChartIcon fontSize="large" color="primary" />
-                                        <Typography variant="h5" component="div" style={{ marginLeft: '10px' }}>
-                                            Productos con Bajo Stock
-                                        </Typography>
-                                    </div>
-                                    {stockData.low_stock && stockData.low_stock.length > 0 ? (
-                                        stockData.low_stock.map((product, index) => (
-                                            <Alert key={index} severity="warning" style={{ marginBottom: '10px' }}>
-                                                Producto <strong>{product.productName}</strong> del Inventario <strong>{product.inventoryName}</strong> tiene bajo stock. <strong>({product.quantity} unidades de {product.minimumQuantity} unidades mínimas)</strong>
-                                            </Alert>
-                                        ))
-                                    ) : (
-                                        <Typography variant="body1">No hay productos con bajo stock.</Typography>
-                                    )}
                                 </CardContent>
                             </Card>
                         </Grid>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, Typography, Grid, Alert } from '@mui/material';
 import { People, Inventory, ShoppingCart } from '@mui/icons-material';
 import { PieChart, Pie, Cell, Tooltip } from 'recharts';
+import Analisis from './Analisis';
 
 const Dashboard = () => {
   const [stockData, setStockData] = useState([]);
@@ -15,7 +16,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         // Simulación de datos
-        setUsuariosCount(100); // Reemplaza con la respuesta real
+        setUsuariosCount(5); // Reemplaza con la respuesta real
         setProductosCount(500); // Reemplaza con la respuesta real
         setTransaccionesCount(25); // Reemplaza con la respuesta real
 
@@ -93,18 +94,8 @@ const Dashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Alertas de poco stock */}
-      <div style={{ marginTop: '20px' }}>
-        {stockData
-          .filter(item => item.value < stockThreshold)
-          .map((item, index) => (
-            <Alert key={index} severity="warning" style={{ marginBottom: '10px', color: 'red' }}>
-              Alerta: {item.name} tiene poco stock ({item.value} unidades)
-            </Alert>
-          ))}
-      </div>
-
-
+      <Analisis />
+      
       <Typography variant="h4" marginTop={5} textAlign={'center'} gutterBottom>
         Distribución de Stock
       </Typography>
