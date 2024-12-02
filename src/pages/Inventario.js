@@ -17,6 +17,8 @@ const Inventario = () => {
     const [openProductsModal, setOpenProductsModal] = useState(false);
     const [selectedInventory, setSelectedInventory] = useState(null);
     const [newInventory, setNewInventory] = useState({ name: '', warehouseId: '' });
+    const [productToEdit, setProductToEdit] = useState(null);
+    const [newMinimumQuantity, setNewMinimumQuantity] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -95,6 +97,12 @@ const Inventario = () => {
         setSelectedInventory(null);
     };
 
+    const handleOpenEditMinimumModal = (product) => {
+        setProductToEdit(product);
+        setNewMinimumQuantity(product.minimumQuantity);
+        setOpenEditModal(true);
+    };
+
     const fetchProductsInInventory = async (inventoryId) => {
         try {
             const response = await axios.get(`http://localhost:4000/inventory/${inventoryId}/product`, {
@@ -154,6 +162,23 @@ const Inventario = () => {
         }
     };
 
+    const handleEditMinimumQuantity = async () => {
+        try {
+            await axios.patch(
+                `http://localhost:4000/inventory/${selectedInventory.id}/product/${productToEdit.id}/minimum-quantity`,
+                { minimumQuantity: newMinimumQuantity },
+                { headers: { Authorization: `Bearer ${auth.token}` } }
+            );
+            setProducts(products.map((p) =>
+                p.id === productToEdit.id ? { ...p, minimumQuantity: newMinimumQuantity } : p
+            ));
+            handleCloseEditModal();
+        } catch (error) {
+            console.error("Error al actualizar el mínimo:", error);
+            setError('Error al actualizar el mínimo');
+        }
+    };
+
     if (loading) {
         return <p>Cargando inventarios...</p>;
     }    
@@ -189,7 +214,7 @@ const Inventario = () => {
                                         color="primary"
                                         onClick={() => handleOpenAddProductModal(inventory)}
                                     >
-                                        Agregar Producto
+                                        Compra/Venta Producto
                                     </Button>
                                     <Button
                                         variant="contained"
@@ -322,6 +347,13 @@ const Inventario = () => {
                                         primary={product.product.name}
                                         secondary={`Stock: ${product.quantity} - Minimo: ${product.minimumQuantity}`}
                                     />
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() => handleOpenEditMinimumModal(product)}
+                                    >
+                                        Editar Mínimo
+                                    </Button>
                                 </ListItem>
                             ))}
                         </List>
@@ -337,6 +369,41 @@ const Inventario = () => {
                     </Button>
                 </Box>
             </Modal>
+
+            <Modal open={openEditModal} onClose={handleCloseEditModal}>
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 300,
+                        bgcolor: 'background.paper',
+                        p: 4,
+                        boxShadow: 24,
+                    }}
+                >
+                    <Typography variant="h6" gutterBottom>
+                        Editar Cantidad Mínima para {productToEdit?.product.name}
+                    </Typography>
+                    <TextField
+                        label="Cantidad Mínima"
+                        type="number"
+                        value={newMinimumQuantity}
+                        onChange={(e) => setNewMinimumQuantity(e.target.value)}
+                        fullWidth
+                        sx={{ marginBottom: 2 }}
+                    />
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleEditMinimumQuantity}
+                    >
+                        Guardar
+                    </Button>
+                </Box>
+            </Modal>
+
         </Box>
     );
 };
@@ -413,7 +480,7 @@ const AddProductForm = ({ inventoryId, authToken, onProductAdded, fetchProductsI
     return (
         <Box sx={{ width: '100%' }}>
             <Typography variant="h6" gutterBottom>
-                Agregar Producto al Inventario
+                Compra / Venta Producto al Inventario
             </Typography>
             {error && <Typography color="error">{error}</Typography>}
             <form onSubmit={handleAddProduct}>
@@ -451,7 +518,7 @@ const AddProductForm = ({ inventoryId, authToken, onProductAdded, fetchProductsI
                     </Select>
                 </FormControl>
                 <Button variant="contained" color="primary" type="submit">
-                    Agregar Producto
+                    Compra/Venta Producto
                 </Button>
             </form>
         </Box>
