@@ -69,18 +69,92 @@ const AppContent = () => {
                   : <Navigate to="/login" />
               }
             />
-            <Route path="/bodega" element={<Bodega />} />
+            <Route 
+              path="/bodega" 
+              element={
+                auth.token
+                ? (auth.isCompany ? <Bodega /> : <Bodega />)
+                : <Navigate to="/login" />
+              }
+            />
+
             <Route path="/historial" element={<HistoriaProducto />} />
-            <Route path="/inventario" element={<Inventario />} />
-            <Route path="/usuarios" element={<Usuarios />} />
-            <Route path="/categorias" element={<Categorias />} />
+
+            <Route 
+              path="/inventario" 
+              element={
+                auth.token
+                ? (auth.isCompany ? <Inventario /> : <Inventario />)
+                : <Navigate to="/login" />
+              }
+            />
+
+            <Route 
+              path="/usuarios" 
+              element={
+                auth.token
+                ? (auth.isCompany ? <Usuarios /> : <Usuarios />)
+                : <Navigate to="/login" />
+              }
+            />
+
+            <Route 
+              path="/categorias" 
+              element={
+                auth.token
+                ? (auth.isCompany ? <Categorias /> : <Categorias />)
+                : <Navigate to="/login" />
+              }
+            />
+
             <Route path="/login" element={<Login />} />
-            <Route path="/productos" element={<Productos />} />
+
+            <Route 
+              path="/productos" 
+              element={
+                auth.token
+                ? (auth.isCompany ? <Productos /> : <Productos />)
+                : <Navigate to="/login" />
+              }
+            />
+
             <Route path="/register" element={<Register />} />
-            <Route path="/proveedores" element={<Proveedores />} />
-            <Route path="/reportes" element={<Reportes />} />
-            <Route path="/ventas" element={<Ventas />} />
-            <Route path="/analisis" element={<Analisis />} />
+
+            <Route 
+              path="/proveedores" 
+              element={
+                auth.token
+                ? (auth.isCompany ? <Proveedores /> : <Proveedores />)
+                : <Navigate to="/login" />
+              }
+            />
+
+            <Route 
+              path="/reportes" 
+              element={
+                auth.token
+                ? (auth.isCompany ? <Reportes /> : <Reportes />)
+                : <Navigate to="/login" />
+              }
+            />
+
+            <Route 
+              path="/ventas" 
+              element={
+                auth.token
+                ? (auth.isCompany ? <Ventas /> : <Ventas />)
+                : <Navigate to="/login" />
+              }
+            />
+
+            <Route 
+              path="/analisis" 
+              element={
+                auth.token
+                ? (auth.isCompany ? <Analisis /> : <Analisis />)
+                : <Navigate to="/login" />
+              }
+            />
           </Routes>
         </div>
         <Footer />
